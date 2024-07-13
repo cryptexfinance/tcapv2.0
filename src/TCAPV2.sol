@@ -3,8 +3,10 @@ pragma solidity 0.8.26;
 
 import {ERC20Upgradeable as ERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {AccessControlUpgradeable as AccessControl} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {ITCAPV2} from "./interface/ITCAPV2.sol";
+import {ITCAPV2, IVersioned} from "./interface/ITCAPV2.sol";
 
+/// @title TCAP v2
+/// @notice TCAP v2 is an index token that is pegged to the entire crypto market cap
 contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     /// @custom:storage-location erc7201:tcapv2.storage.main
     struct TCAPV2Storage {
@@ -30,6 +32,7 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
+    /// @inheritdoc ITCAPV2
     function mint(address to, uint256 amount) external onlyRole(VAULT_ROLE) {
         _mint(to, amount);
         TCAPV2Storage storage $ = _getTCAPV2Storage();
@@ -37,6 +40,7 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
         emit Minted(msg.sender, to, amount);
     }
 
+    /// @inheritdoc ITCAPV2
     function burn(address from, uint256 amount) external onlyRole(VAULT_ROLE) {
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         if (amount > $._mintedAmounts[msg.sender]) revert BalanceExceeded(msg.sender);
@@ -45,12 +49,14 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
         emit Burned(msg.sender, from, amount);
     }
 
+    /// @inheritdoc ITCAPV2
     function mintedAmount(address vault) external view returns (uint256) {
         // TODO: add mint cap?
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         return $._mintedAmounts[vault];
     }
 
+    /// @inheritdoc IVersioned
     function version() external pure returns (string memory) {
         return "1.0.0";
     }
