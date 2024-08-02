@@ -15,7 +15,10 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
 
     // keccak256(abi.encode(uint256(keccak256("tcapv2.storage.main")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant TCAPV2StorageLocation = 0x49c710835f557391deaa6abce7163dc90464df5e070a25601335cdac43861e00;
-    bytes32 VAULT_ROLE = keccak256("VAULT_ROLE");
+
+    bytes32 public constant VAULT_ROLE = keccak256("VAULT_ROLE");
+    // TODO define divisor
+    uint256 public constant DIVISOR = 1e18;
 
     function _getTCAPV2Storage() private pure returns (TCAPV2Storage storage $) {
         assembly {

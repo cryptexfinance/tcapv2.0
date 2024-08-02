@@ -7,26 +7,14 @@ import {Vault} from "../Vault.sol";
 library FeeCalculatorLib {
     uint256 private constant MAX_FEE = 10_000; // 100%
 
-    function registerDeposit(Vault.MintData storage $, uint256 depositId, address user, uint256 amount, uint88 pocketId) internal {
-        if (user == address(0)) revert IVault.InvalidValue();
-        uint256 index = updateFeeIndex($);
-        if ($.deposits[depositId].user != address(0)) revert IVault.DepositIdAlreadyUsed(depositId);
-        $.deposits[depositId] = Vault.Deposit({user: user, pocketId: pocketId, enabled: true, mintAmount: amount, feeIndex: index, accruedInterest: 0});
-        $.totalMinted += amount;
-    }
-
-    function modifyPosition(Vault.MintData storage $, uint256 depositId, int256 amount) internal {
+    function modifyPosition(Vault.MintData storage $, uint256 mintId, int256 amount) internal {
         uint256 currentIndex = feeIndex($);
-        $.deposits[depositId].accruedInterest += outstandingInterest($, currentIndex, depositId);
-        $.deposits[depositId].feeIndex = currentIndex;
-        uint256 currentAmount = $.deposits[depositId].mintAmount;
-        uint256 totalMinted = $.totalMinted;
-        assert(totalMinted < uint256(type(int256).max));
+        $.deposits[mintId].accruedInterest += outstandingInterest($, currentIndex, mintId);
+        $.deposits[mintId].feeIndex = currentIndex;
+        uint256 currentAmount = $.deposits[mintId].mintAmount;
         int256 newAmount = int256(currentAmount) + amount;
-        int256 newTotalMinted = int256(totalMinted) + amount;
-        assert(newAmount > 0);
-        $.deposits[depositId].mintAmount = uint256(newAmount);
-        $.totalMinted = uint256(newTotalMinted);
+        assert(newAmount >= 0);
+        $.deposits[mintId].mintAmount = uint256(newAmount);
     }
 
     function feeIndex(Vault.MintData storage $) internal view returns (uint256) {
@@ -45,13 +33,13 @@ library FeeCalculatorLib {
         $.feeData.fee = fee;
     }
 
-    function outstandingInterest(Vault.MintData storage $, uint256 depositId) internal view returns (uint256 interest) {
-        return outstandingInterest($, feeIndex($), depositId);
+    function outstandingInterest(Vault.MintData storage $, uint256 mintId) internal view returns (uint256 interest) {
+        return outstandingInterest($, feeIndex($), mintId);
     }
 
-    function outstandingInterest(Vault.MintData storage $, uint256 index, uint256 depositId) internal view returns (uint256 interest) {
-        uint256 userIndex = $.deposits[depositId].feeIndex;
-        return $.deposits[depositId].mintAmount * (index - userIndex) / MULTIPLIER();
+    function outstandingInterest(Vault.MintData storage $, uint256 index, uint256 mintId) internal view returns (uint256 interest) {
+        uint256 userIndex = $.deposits[mintId].feeIndex;
+        return $.deposits[mintId].mintAmount * (index - userIndex) / MULTIPLIER();
     }
 
     /// @dev ensures correct calculation for small amounts

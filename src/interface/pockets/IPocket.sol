@@ -44,6 +44,7 @@ interface IPocket is IVersioned {
     /// @param recipient The address of the recipient who receives the underlying tokens
     /// @return amountUnderlying The amount of underlying tokens withdrawn
     /// @dev Only callable by the vault
+    /// @dev MUST revert if more shares are withdrawn than shares owned by user
     function withdraw(address user, uint256 shares, address recipient) external returns (uint256 amountUnderlying);
 
     /// @return vault The vault that the pocket is registered to

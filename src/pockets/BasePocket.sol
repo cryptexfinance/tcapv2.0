@@ -45,8 +45,9 @@ contract BasePocket is IPocket, Initializable {
     /// @inheritdoc IPocket
     function registerDeposit(address user, uint256 amountUnderlying) external onlyVault returns (uint256 shares) {
         uint256 amountOverlying = _onDeposit(amountUnderlying);
-        if (totalShares() > 0) {
-            shares = (totalShares() * amountOverlying) / (OVERLYING_TOKEN.balanceOf(address(this)) - amountOverlying);
+        uint256 totalShares_ = totalShares();
+        if (totalShares_ > 0) {
+            shares = (totalShares_ * amountOverlying) / (OVERLYING_TOKEN.balanceOf(address(this)) - amountOverlying);
         } else {
             shares = amountOverlying;
         }
@@ -54,7 +55,6 @@ contract BasePocket is IPocket, Initializable {
         $.totalShares += shares;
         $.sharesOf[user] += shares;
         emit Deposit(user, amountUnderlying, amountOverlying, shares);
-        return shares;
     }
 
     /// @inheritdoc IPocket
@@ -66,7 +66,6 @@ contract BasePocket is IPocket, Initializable {
         $.totalShares -= shares;
         amountUnderlying = _onWithdraw(withdrawnTokens, recipient);
         emit Withdraw(user, recipient, amountUnderlying, withdrawnTokens, shares);
-        return withdrawnTokens;
     }
 
     /// @inheritdoc IPocket

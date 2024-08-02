@@ -22,16 +22,14 @@ interface IVault is IAccessControl, IVersioned {
     /// @notice Emitted when a deposit is made
     /// @param user The address of the user who made the deposit
     /// @param pocketId The ID of the pocket the deposit was made to
-    /// @param depositId The ID of the deposit
-    /// @param mintAmount The amount of TCAP tokens minted
     /// @param collateralAmount The amount of collateral deposited
-    event Deposited(address indexed user, uint88 indexed pocketId, uint256 indexed depositId, uint256 mintAmount, uint256 collateralAmount);
+    /// @param shares The amount of shares minted by the pocket
+    event Deposited(address indexed user, uint88 indexed pocketId, uint256 collateralAmount, uint256 shares);
+
+    event Withdrawn(address indexed user, uint88 indexed pocketId, address indexed recipient, uint256 shares, uint256 amount);
 
     /// @notice Thrown when a user provides an invalid value
     error InvalidValue();
-
-    /// @notice Thrown when a user provides a deposit ID that has already been used
-    error DepositIdAlreadyUsed(uint256 depositId);
 
     /// @notice Thrown when a user tries to deposit to a pocket that is not enabled
     error PocketNotEnabled(uint88 pocketId);
@@ -56,11 +54,11 @@ interface IVault is IAccessControl, IVersioned {
     function updateInterestRate(uint16 fee) external;
 
     // TODO: separate mint and borrow
-    function mint(uint256 mintAmount, uint256 collateralAmount, uint88 pocketId) external returns (uint256 depositId);
+    function deposit(uint88 pocketId, uint256 collateralAmount) external returns (uint256 shares);
 
-    function mintWithPermit(uint256 mintAmount, uint256 collateralAmount, uint88 pocketId, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+    function depositWithPermit(uint88 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
         external
-        returns (uint256 depositId);
+        returns (uint256 shares);
 
     /// @return The TCAPV2 contract
     function TCAPV2() external view returns (ITCAPV2);

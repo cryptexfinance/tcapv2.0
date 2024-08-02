@@ -31,4 +31,7 @@ interface ITCAPV2 is IERC20, IAccessControl, IVersioned {
 
     /// @notice Returns the amount of TCAP tokens minted by a vault
     function mintedAmount(address vault) external view returns (uint256);
+
+    /// @return Value used as divisor with the total market cap, just like the S&P 500 or any major financial index would to define the final tcap token price
+    function DIVISOR() external view returns (uint256);
 }

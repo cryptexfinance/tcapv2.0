@@ -7,11 +7,13 @@ import {IVault, IVersioned} from "./interface/IVault.sol";
 import {IPocket} from "./interface/pockets/IPocket.sol";
 import {FeeCalculatorLib} from "./lib/FeeCalculatorLib.sol";
 import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title Vault
 /// @notice Vaults manage deposits of collateral and mint TCAP tokens
 contract Vault is IVault, AccessControl {
     using FeeCalculatorLib for MintData;
+    using SafeCast for uint256;
 
     struct Deposit {
         address user;
@@ -34,9 +36,8 @@ contract Vault is IVault, AccessControl {
     }
 
     struct MintData {
-        mapping(uint256 depositId => Deposit deposit) deposits;
+        mapping(uint256 mintId => Deposit deposit) deposits;
         FeeData feeData;
-        uint256 totalMinted;
     }
 
     /// @custom:storage-location erc7201:tcapv2.storage.vault
@@ -44,15 +45,24 @@ contract Vault is IVault, AccessControl {
         mapping(uint88 pocketId => Pocket pocket) pockets;
         uint88 pocketCounter;
         uint256 depositCounter;
-        MintData depositData;
+        MintData mintData;
     }
 
     // keccak256(abi.encode(uint256(keccak256("tcapv2.storage.vault")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant VaultStorageLocation = 0xead32f79207e43129359e4c6890b619e37e73a4cc1d61050c081a5aea1b4df00;
+
     bytes32 public constant FEE_SETTER_ROLE = keccak256("FEE_SETTER_ROLE");
+    bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
+
     ITCAPV2 public immutable TCAPV2;
     IERC20 public immutable COLLATERAL;
     IPermit2 private immutable PERMIT2;
+
+    /// @dev ensures loan is healthy after any action is performed
+    modifier ensureLoanHealthy() {
+        _;
+        // todo: ensure that loan is healthy
+    }
 
     constructor(ITCAPV2 tCAPV2_, IERC20 collateral_, IPermit2 permit2_) {
         TCAPV2 = tCAPV2_;
@@ -94,39 +104,73 @@ contract Vault is IVault, AccessControl {
         _updateInterestRate(fee);
     }
 
-    function mint(uint256 mintAmount, uint256 collateralAmount, uint88 pocketId) external returns (uint256 depositId) {
-        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
-        TCAPV2.transferFrom(msg.sender, address(pocket), collateralAmount);
-        depositId = _mint(mintAmount, collateralAmount, pocketId);
+    /// @inheritdoc IVault
+    function deposit(uint88 pocketId, uint256 amount) external returns (uint256 shares) {
+        IPocket pocket = _getPocket(pocketId);
+        COLLATERAL.transferFrom(msg.sender, address(pocket), amount);
+        shares = pocket.registerDeposit(msg.sender, amount);
+        emit Deposited(msg.sender, pocketId, amount, shares);
     }
 
-    function mintWithPermit(uint256 mintAmount, uint256 collateralAmount, uint88 pocketId, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+    /// @inheritdoc IVault
+    function depositWithPermit(uint88 pocketId, uint256 amount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
         external
-        returns (uint256 depositId)
+        returns (uint256 shares)
     {
         if (permit.permitted.token != address(COLLATERAL)) revert InvalidToken();
-        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
-        IPermit2.SignatureTransferDetails memory transferDetails =
-            ISignatureTransfer.SignatureTransferDetails({to: address(pocket), requestedAmount: collateralAmount});
+        IPocket pocket = _getPocket(pocketId);
+        IPermit2.SignatureTransferDetails memory transferDetails = ISignatureTransfer.SignatureTransferDetails({to: address(pocket), requestedAmount: amount});
         PERMIT2.permitTransferFrom(permit, transferDetails, msg.sender, signature);
-        depositId = _mint(mintAmount, collateralAmount, pocketId);
+        shares = pocket.registerDeposit(msg.sender, amount);
+        emit Deposited(msg.sender, pocketId, amount, shares);
     }
 
-    function _mint(uint256 mintAmount, uint256 collateralAmount, uint88 pocketId) internal returns (uint256 depositId) {
-        VaultStorage storage $ = _getVaultStorage();
-        if (!$.pockets[pocketId].enabled) revert PocketNotEnabled(pocketId);
-        depositId = ++$.depositCounter;
-        $.depositData.registerDeposit(depositId, msg.sender, mintAmount, pocketId);
-        IPocket pocket = $.pockets[pocketId].pocket;
-        pocket.registerDeposit(msg.sender, collateralAmount);
-        TCAPV2.mint(msg.sender, mintAmount);
-        emit Deposited(msg.sender, pocketId, depositId, mintAmount, collateralAmount);
+    function withdraw(uint88 pocketId, uint256 shares, address to) external ensureLoanHealthy returns (uint256 amount) {
+        // TODO: before withdrawing calculate interest and withdraw it from the pocket
+        // probably also add ability to specify underlying token amount instead of shares when withdrawing and or
+        // allow passing type(uint256).max to withdraw all tokens
+        IPocket pocket = _getPocket(pocketId);
+        amount = pocket.withdraw(msg.sender, shares, to);
+        emit Withdrawn(msg.sender, pocketId, to, shares, amount);
+    }
+
+    function mint(uint88 pocketId, uint256 amount) external ensureLoanHealthy {
+        MintData storage $ = _getVaultStorage().mintData;
+        $.modifyPosition(_toMintId(msg.sender, pocketId), amount.toInt256());
+        TCAPV2.mint(msg.sender, amount);
+    }
+
+    function burn(uint88 pocketId, uint256 amount) external {
+        MintData storage $ = _getVaultStorage().mintData;
+        $.modifyPosition(_toMintId(msg.sender, pocketId), -amount.toInt256());
+        TCAPV2.burn(msg.sender, amount);
+    }
+
+    // TODO: liquidation
+
+    function collateralOf(address user, uint88 pocketId) external view returns (uint256) {
+        // TODO: calculate interest and subtract from the pocket balance
+        return _getPocket(pocketId).balanceOf(user);
+    }
+
+    function mintedAmount(address user, uint88 pocketId) external view returns (uint256) {
+        return _getVaultStorage().mintData.deposits[_toMintId(user, pocketId)].mintAmount;
     }
 
     function _updateInterestRate(uint16 fee) internal {
         VaultStorage storage $ = _getVaultStorage();
-        $.depositData.setInterestRate(fee);
+        $.mintData.setInterestRate(fee);
         emit InterestRateUpdated(fee);
+    }
+
+    function _getPocket(uint88 pocketId) internal view returns (IPocket) {
+        Pocket storage p = _getVaultStorage().pockets[pocketId];
+        if (!p.enabled) revert PocketNotEnabled(pocketId);
+        return p.pocket;
+    }
+
+    function _toMintId(address user, uint88 pocketId) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encode(user, pocketId)));
     }
 
     /// @inheritdoc IVersioned
