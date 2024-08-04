@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {AccessControlUpgradeable as AccessControl} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {Multicall} from "./lib/Multicall.sol";
 import {ITCAPV2, IERC20} from "./interface/ITCAPV2.sol";
 import {IVault, IVersioned} from "./interface/IVault.sol";
 import {IPocket} from "./interface/pockets/IPocket.sol";
@@ -11,7 +12,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @title Vault
 /// @notice Vaults manage deposits of collateral and mint TCAP tokens
-contract Vault is IVault, AccessControl {
+contract Vault is IVault, AccessControl, Multicall {
     using FeeCalculatorLib for MintData;
     using SafeCast for uint256;
 
