@@ -4,6 +4,9 @@ pragma solidity 0.8.26;
 /// @title Oracle Interface
 /// @notice Interface that needs to be implemented by all oracles
 interface IOracle {
+    /// @notice Should be thrown when the oracle is not valid
+    error InvalidOracle();
+
     /// @return the address of the asset this oracle is used for
     function asset() external view returns (address);
 

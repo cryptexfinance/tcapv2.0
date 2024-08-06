@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {ERC20Upgradeable as ERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {AccessControlUpgradeable as AccessControl} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ITCAPV2, IVersioned} from "./interface/ITCAPV2.sol";
+import {IOracle} from "./interface/IOracle.sol";
 
 /// @title TCAP v2
 /// @notice TCAP v2 is an index token that is pegged to the entire crypto market cap
@@ -11,12 +12,15 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     /// @custom:storage-location erc7201:tcapv2.storage.main
     struct TCAPV2Storage {
         mapping(address vault => uint256 amount) _mintedAmounts;
+        IOracle oracle;
     }
 
     // keccak256(abi.encode(uint256(keccak256("tcapv2.storage.main")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant TCAPV2StorageLocation = 0x49c710835f557391deaa6abce7163dc90464df5e070a25601335cdac43861e00;
 
     bytes32 public constant VAULT_ROLE = keccak256("VAULT_ROLE");
+    bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
+
     // TODO define divisor
     uint256 public constant DIVISOR = 1e18;
 
@@ -30,9 +34,16 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
         _disableInitializers();
     }
 
-    function initialize(address admin) external initializer {
+    function initialize(address admin, address newOracle) external initializer {
         __ERC20_init("TCAP", "TCAP");
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _setOracle(newOracle);
+    }
+
+    /// @inheritdoc ITCAPV2
+    function setOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE) {
+        if (IOracle(newOracle).asset() != address(this)) revert IOracle.InvalidOracle();
+        _setOracle(newOracle);
     }
 
     /// @inheritdoc ITCAPV2
@@ -57,6 +68,24 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
         // TODO: add mint cap?
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         return $._mintedAmounts[vault];
+    }
+
+    /// @inheritdoc ITCAPV2
+    function oracle() external view returns (address) {
+        TCAPV2Storage storage $ = _getTCAPV2Storage();
+        return address($.oracle);
+    }
+
+    /// @inheritdoc ITCAPV2
+    function latestPrice() external view returns (uint256) {
+        TCAPV2Storage storage $ = _getTCAPV2Storage();
+        return $.oracle.latestPrice();
+    }
+
+    function _setOracle(address newOracle) internal {
+        TCAPV2Storage storage $ = _getTCAPV2Storage();
+        $.oracle = IOracle(newOracle);
+        emit OracleUpdated(newOracle);
     }
 
     /// @inheritdoc IVersioned

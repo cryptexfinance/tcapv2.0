@@ -57,7 +57,7 @@ contract InterestRateCalculationTest is Uninitialized {
         skip(duration);
         for (uint256 i = 0; i < deposits.length; i++) {
             uint256 expectedFee = calculateInterestRate(deposits[i].amount, fee, duration);
-            uint256 actualFee = data.outstandingInterest(i);
+            uint256 actualFee = data.interestOf(i);
             assertEq(actualFee, expectedFee);
         }
     }
@@ -72,7 +72,7 @@ contract InterestRateCalculationTest is Uninitialized {
             skip(duration);
             totalFee += calculateInterestRate(deposits[mintId].amount, fee, duration);
         }
-        assertEq(data.outstandingInterest(mintId), totalFee);
+        assertEq(data.interestOf(mintId), totalFee);
     }
 
     function test_fuzz_calculateInterestCorrectlyForChangingMintAmounts(uint256[] memory depositSeeds, uint256 mintId, FeePeriod[] memory periods) public {
@@ -89,6 +89,6 @@ contract InterestRateCalculationTest is Uninitialized {
             skip(duration);
             totalFee += calculateInterestRate(uint256(currentAmount), fee, duration);
         }
-        assertEq(data.outstandingInterest(mintId), totalFee);
+        assertEq(data.interestOf(mintId), totalFee);
     }
 }

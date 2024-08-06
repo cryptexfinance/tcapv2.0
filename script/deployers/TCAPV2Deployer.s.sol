@@ -16,8 +16,11 @@ abstract contract TCAPV2Deployer is Script {
     ProxyAdmin internal tCAPV2ProxyAdmin;
     address internal tCAPV2Implementation;
 
-    function deployTCAPV2Transparent(address proxyAdminOwner, address admin) internal returns (address implementation, address proxyAdmin, address proxy) {
-        bytes memory initData = abi.encodeCall(TCAPV2.initialize, (admin));
+    function deployTCAPV2Transparent(address proxyAdminOwner, address admin, address newOracle)
+        internal
+        returns (address implementation, address proxyAdmin, address proxy)
+    {
+        bytes memory initData = abi.encodeCall(TCAPV2.initialize, (admin, newOracle));
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 

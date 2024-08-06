@@ -58,7 +58,13 @@ contract BasePocket is IPocket, Initializable {
     }
 
     /// @inheritdoc IPocket
-    function withdraw(address user, uint256 shares, address recipient) external onlyVault returns (uint256 amountUnderlying) {
+    function withdraw(address user, uint256 amountUnderlying, address recipient) external onlyVault returns (uint256 shares) {
+        if (amountUnderlying == type(uint256).max) {
+            amountUnderlying = _balanceOf(user);
+            shares = sharesOf(user);
+        } else {
+            shares = amountUnderlying * totalShares() / _totalBalance();
+        }
         if (shares > sharesOf(user)) revert InsufficientFunds();
         uint256 withdrawnTokens = (shares * OVERLYING_TOKEN.balanceOf(address(this))) / totalShares();
         BasePocketStorage storage $ = _getBasePocketStorage();

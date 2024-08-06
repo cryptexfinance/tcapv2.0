@@ -15,10 +15,11 @@ abstract contract Uninitialized is Test, TestHelpers, TCAPV2Deployer {
 
 abstract contract Initialized is Uninitialized {
     address admin = makeAddr("admin");
+    address oracle = makeAddr("oracle");
 
     function setUp() public virtual override {
         super.setUp();
-        deployTCAPV2Transparent(admin, admin);
+        deployTCAPV2Transparent(admin, admin, oracle);
     }
 }
 
@@ -29,7 +30,7 @@ contract UninitializedTest is Uninitialized {
 
     function test_RevertsOnInitialization() public {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        tCAPV2.initialize(address(1));
+        tCAPV2.initialize(address(1), address(2));
     }
 }
 

@@ -33,11 +33,16 @@ library FeeCalculatorLib {
         $.feeData.fee = fee;
     }
 
-    function outstandingInterest(Vault.MintData storage $, uint256 mintId) internal view returns (uint256 interest) {
-        return outstandingInterest($, feeIndex($), mintId);
+    function interestOf(Vault.MintData storage $, uint256 mintId) internal view returns (uint256 interest) {
+        return $.deposits[mintId].accruedInterest + outstandingInterest($, feeIndex($), mintId);
     }
 
-    function outstandingInterest(Vault.MintData storage $, uint256 index, uint256 mintId) internal view returns (uint256 interest) {
+    function resetInterestOf(Vault.MintData storage $, uint256 mintId) internal {
+        $.deposits[mintId].accruedInterest = 0;
+        $.deposits[mintId].feeIndex = feeIndex($);
+    }
+
+    function outstandingInterest(Vault.MintData storage $, uint256 index, uint256 mintId) private view returns (uint256 interest) {
         uint256 userIndex = $.deposits[mintId].feeIndex;
         return $.deposits[mintId].mintAmount * (index - userIndex) / MULTIPLIER();
     }
