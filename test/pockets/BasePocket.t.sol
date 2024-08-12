@@ -58,6 +58,7 @@ contract UninitializedTest is Uninitialized {
         assertEq(address(basePocket.VAULT()), makeAddr("vault"));
         assertEq(address(basePocket.UNDERLYING_TOKEN()), makeAddr("tokenUnderlying"));
         assertEq(address(basePocket.OVERLYING_TOKEN()), makeAddr("tokenOverlying"));
+        assertEq(basePocket.version(), "1.0.0");
     }
 
     function test_RevertsOnInitialization() public {

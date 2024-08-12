@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity >=0.8.0;
 
 /// @title Oracle Interface
 /// @notice Interface that needs to be implemented by all oracles

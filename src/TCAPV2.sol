@@ -34,10 +34,10 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
         _disableInitializers();
     }
 
-    function initialize(address admin, address newOracle) external initializer {
+    /// @dev oracle needs to be set after deployment
+    function initialize(address admin) external initializer {
         __ERC20_init("TCAP", "TCAP");
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _setOracle(newOracle);
     }
 
     /// @inheritdoc ITCAPV2
@@ -48,9 +48,9 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
 
     /// @inheritdoc ITCAPV2
     function mint(address to, uint256 amount) external onlyRole(VAULT_ROLE) {
-        _mint(to, amount);
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         $._mintedAmounts[msg.sender] += amount;
+        _mint(to, amount);
         emit Minted(msg.sender, to, amount);
     }
 

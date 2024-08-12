@@ -9,7 +9,7 @@ import {AggregatedChainlinkOracle} from "./AggregatedChainlinkOracle.sol";
 contract TCAPTargetOracle is AggregatedChainlinkOracle {
     uint256 private immutable DIVISOR;
 
-    constructor(ITCAPV2 tcap, address feed, address token) AggregatedChainlinkOracle(feed, token) {
+    constructor(ITCAPV2 tcap, address feed) AggregatedChainlinkOracle(feed, address(tcap)) {
         DIVISOR = tcap.DIVISOR();
     }
 

@@ -10,7 +10,6 @@ contract Deploy is Script, TCAPV2Deployer {
     function run() public {
         address proxyAdmin = address(1);
         address admin = address(2);
-        address oracle = address(3);
-        deployTCAPV2Transparent(proxyAdmin, admin, oracle);
+        deployTCAPV2Transparent(proxyAdmin, admin);
     }
 }

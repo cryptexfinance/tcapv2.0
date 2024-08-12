@@ -13,14 +13,18 @@ abstract contract Uninitialized is Test, TestHelpers, AAVEv3PocketDeployer {
     address POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
     IWETH9 underlyingToken = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IERC20 overlyingAToken = IERC20(0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8);
-    bool forked = false;
+    bool forked;
 
     function setUp() public virtual {
+        forked = false;
         try vm.envString("INFURA_KEY") returns (string memory infuraKey) {
             string memory rpcUrl = string.concat("https://mainnet.infura.io/v3/", infuraKey);
             vm.createSelectFork(rpcUrl);
             forked = true;
-        } catch {}
+            console2.log("Forked Ethereum mainnet");
+        } catch {
+            console2.log("Skipping forked tests, no infura key found. Add key to .env to run forked tests.");
+        }
 
         address vault = makeAddr("vault");
         aAVEv3Pocket = AAVEv3Pocket(deployAAVEv3PocketImplementation(vault, address(underlyingToken), address(overlyingAToken), POOL_MAINNET));
@@ -28,8 +32,11 @@ abstract contract Uninitialized is Test, TestHelpers, AAVEv3PocketDeployer {
 
     modifier onlyForked() {
         if (forked) {
+            console2.log("running forked test");
             _;
+            return;
         }
+        console2.log("skipping forked test");
     }
 }
 
@@ -44,13 +51,15 @@ abstract contract Initialized is Uninitialized {
 abstract contract Deposited is Initialized {
     uint256 MAX_AMOUNT = 100 ether;
 
-    function setUp() public virtual override onlyForked {
+    function setUp() public virtual override {
         super.setUp();
-        uint256 amount = uint256(keccak256("alice")) % MAX_AMOUNT;
-        vm.deal(address(this), amount);
-        underlyingToken.deposit{value: amount}();
-        underlyingToken.transfer(address(aAVEv3Pocket), amount);
-        aAVEv3Pocket.registerDeposit(makeAddr("alice"), amount);
+        if (forked) {
+            uint256 amount = uint256(keccak256("alice")) % MAX_AMOUNT;
+            vm.deal(address(this), amount);
+            underlyingToken.deposit{value: amount}();
+            underlyingToken.transfer(address(aAVEv3Pocket), amount);
+            aAVEv3Pocket.registerDeposit(makeAddr("alice"), amount);
+        }
     }
 }
 
@@ -61,6 +70,7 @@ contract UninitializedTest is Uninitialized {
         assertEq(address(aAVEv3Pocket.UNDERLYING_TOKEN()), address(underlyingToken));
         assertEq(address(aAVEv3Pocket.OVERLYING_TOKEN()), address(overlyingAToken));
         assertEq(address(aAVEv3Pocket.POOL()), POOL_MAINNET);
+        assertEq(aAVEv3Pocket.version(), "1.0.0");
     }
 
     function test_RevertsOnInitialization() public {
@@ -97,7 +107,7 @@ contract DepositTest is Initialized {
 contract WithdrawTest is Deposited {
     function test_revertIf_withdrawingMoreSharesThanOwned(uint256 shares) public onlyForked {
         address user = makeAddr("alice");
-        shares = bound(shares, aAVEv3Pocket.sharesOf(user) + 1, type(uint256).max);
+        shares = bound(shares, aAVEv3Pocket.sharesOf(user) + 1, type(uint128).max - 1);
         vm.expectRevert(IPocket.InsufficientFunds.selector);
         aAVEv3Pocket.withdraw(user, shares, user);
     }
@@ -113,9 +123,9 @@ contract WithdrawTest is Deposited {
         vm.expectEmit(true, true, false, true);
         emit IPocket.Withdraw(user, recipient, shares, shares, shares);
         aAVEv3Pocket.withdraw(user, shares, recipient);
-        assertEq(aAVEv3Pocket.totalShares(), totalSharesBefore - shares, "1");
-        assertEq(aAVEv3Pocket.sharesOf(user), sharesBefore - shares, "2");
-        assertEq(underlyingToken.balanceOf(recipient), balanceRecipientBefore + shares, "3");
+        assertEq(aAVEv3Pocket.totalShares(), totalSharesBefore - shares);
+        assertEq(aAVEv3Pocket.sharesOf(user), sharesBefore - shares);
+        assertEq(underlyingToken.balanceOf(recipient), balanceRecipientBefore + shares);
         assertApproxEqAbs(overlyingAToken.balanceOf(address(aAVEv3Pocket)), balancePocketBefore - shares, 1);
     }
 }

@@ -80,7 +80,8 @@ contract InterestRateCalculationTest is Uninitialized {
         mintId = bound(mintId, 0, deposits.length - 1);
         uint256 totalFee = 0;
         int256 currentAmount = int256(deposits[mintId].amount);
-        for (uint256 i = 0; i < periods.length; i++) {
+        uint256 len = periods.length > uint256(currentAmount / 1e18) ? uint256(currentAmount / 1e18) : periods.length;
+        for (uint256 i = 0; i < len; i++) {
             int256 balanceChange = bound(int256(uint256(keccak256(abi.encode(i, mintId)))), -1e18, 1e18);
             currentAmount += balanceChange;
             data.modifyPosition(mintId, balanceChange);

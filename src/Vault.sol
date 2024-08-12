@@ -10,6 +10,7 @@ import {FeeCalculatorLib} from "./lib/FeeCalculatorLib.sol";
 import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IOracle} from "./interface/IOracle.sol";
+import {Constants} from "./lib/Constants.sol";
 
 /// @title Vault
 /// @notice Vaults manage deposits of collateral and mint TCAP tokens
@@ -46,11 +47,10 @@ contract Vault is IVault, AccessControl, Multicall {
     struct VaultStorage {
         mapping(uint88 pocketId => Pocket pocket) pockets;
         uint88 pocketCounter;
-        uint256 depositCounter;
-        MintData mintData;
         IOracle oracle;
         address feeRecipient;
-        uint256 liquidationThreshold;
+        uint96 liquidationThreshold;
+        MintData mintData;
     }
 
     // keccak256(abi.encode(uint256(keccak256("tcapv2.storage.vault")) - 1)) & ~bytes32(uint256(0xff))
@@ -78,12 +78,12 @@ contract Vault is IVault, AccessControl, Multicall {
         _disableInitializers();
     }
 
-    function initialize(address admin, uint16 initialFee, address oracle_, address feeRecipient_, uint256 liquidationThreshold_) public initializer {
+    function initialize(address admin, uint16 initialFee, address oracle_, address feeRecipient_, uint96 liquidationThreshold_) public initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _updateInterestRate(initialFee);
-        _setOracle(oracle_);
+        _updateOracle(oracle_);
         _updateFeeRecipient(feeRecipient_);
-        _setLiquidationThreshold(liquidationThreshold_);
+        _updateLiquidationThreshold(liquidationThreshold_);
     }
 
     function _getVaultStorage() private pure returns (VaultStorage storage $) {
@@ -94,15 +94,15 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function addPocket(IPocket pocket) external onlyRole(POCKET_SETTER_ROLE) returns (uint88 pocketId) {
-        if (address(pocket) == address(0) || address(pocket.VAULT()) != address(this)) revert InvalidValue();
+        if (address(pocket) == address(0) || address(pocket.VAULT()) != address(this) || pocket.UNDERLYING_TOKEN() != COLLATERAL) revert InvalidValue();
         VaultStorage storage $ = _getVaultStorage();
-        pocketId = $.pocketCounter++;
+        pocketId = ++$.pocketCounter;
         $.pockets[pocketId] = Pocket({pocket: pocket, enabled: true});
         emit PocketAdded(pocketId, pocket);
     }
 
     /// @inheritdoc IVault
-    function removePocket(uint88 pocketId) external onlyRole(POCKET_SETTER_ROLE) {
+    function disablePocket(uint88 pocketId) external onlyRole(POCKET_SETTER_ROLE) {
         VaultStorage storage $ = _getVaultStorage();
         if (!$.pockets[pocketId].enabled) revert PocketNotEnabled(pocketId);
         $.pockets[pocketId].enabled = false;
@@ -120,14 +120,14 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function setOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE) {
+    function updateOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE) {
         if (IOracle(newOracle).asset() != address(COLLATERAL)) revert IOracle.InvalidOracle();
-        _setOracle(newOracle);
+        _updateOracle(newOracle);
     }
 
     /// @inheritdoc IVault
-    function setLiquidationThreshold(uint256 newLiquidationThreshold) external onlyRole(LIQUIDATION_SETTER_ROLE) {
-        _setLiquidationThreshold(newLiquidationThreshold);
+    function updateLiquidationThreshold(uint96 newLiquidationThreshold) external onlyRole(LIQUIDATION_SETTER_ROLE) {
+        _updateLiquidationThreshold(newLiquidationThreshold);
     }
 
     /// @inheritdoc IVault
@@ -154,7 +154,8 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function withdraw(uint88 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId) returns (uint256 shares) {
         _takeFee(msg.sender, pocketId);
-        IPocket pocket = _getPocket(pocketId);
+        // @audit should be able to withdraw even if pocket is disabled
+        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
         shares = pocket.withdraw(msg.sender, amount, to);
         emit Withdrawn(msg.sender, pocketId, to, amount, shares);
     }
@@ -252,8 +253,18 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function liquidationThreshold() public view returns (uint256) {
+    function liquidationThreshold() public view returns (uint96) {
         return _getVaultStorage().liquidationThreshold;
+    }
+
+    /// @inheritdoc IVault
+    function pockets(uint88 id) external view returns (IPocket) {
+        return _getVaultStorage().pockets[id].pocket;
+    }
+
+    /// @inheritdoc IVault
+    function pocketEnabled(uint88 id) external view returns (bool) {
+        return _getVaultStorage().pockets[id].enabled;
     }
 
     function _takeFee(address user, uint88 pocketId) internal {
@@ -280,15 +291,17 @@ contract Vault is IVault, AccessControl, Multicall {
         emit FeeRecipientUpdated(newFeeRecipient);
     }
 
-    function _setLiquidationThreshold(uint256 newLiquidationThreshold) internal {
+    function _updateLiquidationThreshold(uint96 newLiquidationThreshold) internal {
         // TODO finalize values
-        if (newLiquidationThreshold < 1e18 || newLiquidationThreshold > 2e18) revert InvalidValue();
+        if (newLiquidationThreshold < Constants.MIN_LIQUIDATION_THRESHOLD || newLiquidationThreshold > Constants.MAX_LIQUIDATION_THRESHOLD) {
+            revert InvalidValue();
+        }
         VaultStorage storage $ = _getVaultStorage();
         $.liquidationThreshold = newLiquidationThreshold;
         emit LiquidationThresholdUpdated(newLiquidationThreshold);
     }
 
-    function _setOracle(address newOracle) internal {
+    function _updateOracle(address newOracle) internal {
         VaultStorage storage $ = _getVaultStorage();
         $.oracle = IOracle(newOracle);
         emit OracleUpdated(newOracle);

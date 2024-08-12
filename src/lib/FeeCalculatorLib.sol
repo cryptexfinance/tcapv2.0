@@ -5,7 +5,7 @@ import {IVault} from "../interface/IVault.sol";
 import {Vault} from "../Vault.sol";
 
 library FeeCalculatorLib {
-    uint256 private constant MAX_FEE = 10_000; // 100%
+    uint256 internal constant MAX_FEE = 10_000; // 100%
 
     function modifyPosition(Vault.MintData storage $, uint256 mintId, int256 amount) internal {
         uint256 currentIndex = feeIndex($);

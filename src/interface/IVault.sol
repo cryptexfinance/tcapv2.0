@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.0;
 
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {IPocket} from "./pockets/IPocket.sol";
@@ -88,10 +88,10 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @dev Only callable by the admin
     function addPocket(IPocket pocket) external returns (uint88 pocketId);
 
-    /// @notice Removes a pocket from the vault
-    /// @param pocketId The id of the pocket to remove
+    /// @notice Disables a pocket to be used for deposits
+    /// @param pocketId The id of the pocket to disable
     /// @dev Only callable by the admin
-    function removePocket(uint88 pocketId) external;
+    function disablePocket(uint88 pocketId) external;
 
     /// @notice Updates the interest rate of the vault
     /// @param fee The new interest rate
@@ -106,12 +106,12 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @notice Updates the oracle of the collateral
     /// @param newOracle The new oracle address
     /// @dev Only callable by the oracle setter
-    function setOracle(address newOracle) external;
+    function updateOracle(address newOracle) external;
 
     /// @notice Updates the liquidation threshold of the vault
     /// @param newLiquidationThreshold The new liquidation threshold
     /// @dev Only callable by the admin
-    function setLiquidationThreshold(uint256 newLiquidationThreshold) external;
+    function updateLiquidationThreshold(uint96 newLiquidationThreshold) external;
 
     /// @notice Deposits collateral into a pocket
     /// @param pocketId The id of the pocket to deposit to
@@ -214,11 +214,17 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     function feeRecipient() external view returns (address);
 
     /// @return The liquidation threshold of the vault
-    function liquidationThreshold() external view returns (uint256);
+    function liquidationThreshold() external view returns (uint96);
 
     /// @return The TCAPV2 contract
     function TCAPV2() external view returns (ITCAPV2);
 
     /// @return The collateral token of the vault
     function COLLATERAL() external view returns (IERC20);
+
+    /// @return The pocket with the given id
+    function pockets(uint88 id) external view returns (IPocket);
+
+    /// @return Whether the pocket with the given id is enabled
+    function pocketEnabled(uint88 id) external view returns (bool);
 }
