@@ -48,6 +48,9 @@ interface ITCAPV2 is IERC20, IAccessControl, IVersioned {
     /// @dev Defined as the value of the total crypto marketcap divided by the divisor
     function latestPrice() external view returns (uint256);
 
+    /// @return The price of a given amount of TCAP tokens
+    function latestPriceOf(uint256 amount) external view returns (uint256);
+
     /// @return Value used as divisor with the total market cap, just like the S&P 500 or any major financial index would to define the final tcap token price
     function DIVISOR() external view returns (uint256);
 }

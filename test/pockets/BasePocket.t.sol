@@ -91,7 +91,7 @@ contract PermissionTest is Initialized {
 
 contract InitialDepositTest is Initialized {
     function test_shouldMintInitialShares(uint256 amount) public {
-        amount = bound(amount, 1, 1e38);
+        amount = bound(amount, 1, 1e38 - 1);
         address user = makeAddr("alice");
         collateral.mint(address(basePocket), amount);
         vm.expectEmit(true, true, false, true);
@@ -107,7 +107,7 @@ contract InitialDepositTest is Initialized {
 contract SubsequentDepositsTest is InitialDeposited {
     function test_shouldMintSubsequentShares(uint256 amount) public {
         address user = makeAddr("bob");
-        amount = bound(amount, 1, 1e38);
+        amount = bound(amount, 1, 1e38 - 1);
         uint256 totalSharesBefore = basePocket.totalShares();
         uint256 totalBalanceBefore = basePocket.totalBalance();
         collateral.mint(address(basePocket), amount);
@@ -163,7 +163,7 @@ contract WithdrawTest is Deposited {
         uint256 balanceRecipientBefore = collateral.balanceOf(recipient);
         uint256 balancePocketBefore = collateral.balanceOf(address(basePocket));
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Withdraw(user, recipient, expectedUnderlying, expectedUnderlying, expectedUnderlying);
+        emit IPocket.Withdrawal(user, recipient, expectedUnderlying, expectedUnderlying, expectedUnderlying);
         basePocket.withdraw(user, amountUnderlying, recipient);
         assertEq(basePocket.totalShares(), totalSharesBefore - expectedUnderlying);
         assertEq(basePocket.sharesOf(user), sharesBefore - expectedUnderlying);

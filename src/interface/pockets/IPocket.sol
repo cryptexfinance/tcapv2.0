@@ -22,7 +22,7 @@ interface IPocket is IVersioned {
     /// @param amountUnderlying The amount of underlying tokens withdrawn
     /// @param amountOverlying The amount of overlying tokens removed from the users balance
     /// @param shares The amount of shares burned
-    event Withdraw(address indexed user, address indexed recipient, uint256 amountUnderlying, uint256 amountOverlying, uint256 shares);
+    event Withdrawal(address indexed user, address indexed recipient, uint256 amountUnderlying, uint256 amountOverlying, uint256 shares);
 
     /// @notice Emitted when an account that is not the vault calls a restricted function
     error Unauthorized();

@@ -76,6 +76,9 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @notice Thrown when a user provides an invalid token with a permit signature
     error InvalidToken();
 
+    /// @notice Thrown when a user tries to burn more TCAP tokens than they have minted using this vault
+    error InsufficientMintedAmount();
+
     /// @notice Thrown when a user mints or withdraws and the loan falls below the liquidation threshold
     error LoanNotHealthy();
 

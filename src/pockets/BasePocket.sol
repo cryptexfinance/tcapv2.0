@@ -54,6 +54,8 @@ contract BasePocket is IPocket, Initializable {
         BasePocketStorage storage $ = _getBasePocketStorage();
         $.totalShares += shares;
         $.sharesOf[user] += shares;
+        // @audit should not happen, prevent overflow when calculating balance
+        assert($.sharesOf[user] < 1e38);
         emit Deposit(user, amountUnderlying, amountOverlying, shares);
     }
 
@@ -71,7 +73,7 @@ contract BasePocket is IPocket, Initializable {
         $.sharesOf[user] -= shares;
         $.totalShares -= shares;
         amountUnderlying = _onWithdraw(withdrawnTokens, recipient);
-        emit Withdraw(user, recipient, amountUnderlying, withdrawnTokens, shares);
+        emit Withdrawal(user, recipient, amountUnderlying, withdrawnTokens, shares);
     }
 
     /// @inheritdoc IPocket
@@ -104,7 +106,9 @@ contract BasePocket is IPocket, Initializable {
     }
 
     function _balanceOf(address user) internal view virtual returns (uint256) {
-        return sharesOf(user) * UNDERLYING_TOKEN.balanceOf(address(this)) / totalShares();
+        uint256 totalShares_ = totalShares();
+        if (totalShares_ == 0) return 0;
+        return sharesOf(user) * UNDERLYING_TOKEN.balanceOf(address(this)) / totalShares_;
     }
 
     function _totalBalance() internal view virtual returns (uint256) {

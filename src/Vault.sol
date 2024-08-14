@@ -171,7 +171,9 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function burn(uint88 pocketId, uint256 amount) external {
         MintData storage $ = _getVaultStorage().mintData;
-        $.modifyPosition(_toMintId(msg.sender, pocketId), -amount.toInt256());
+        uint256 mintId = _toMintId(msg.sender, pocketId);
+        if ($.deposits[mintId].mintAmount < amount) revert InsufficientMintedAmount();
+        $.modifyPosition(mintId, -amount.toInt256());
         TCAPV2.burn(msg.sender, amount);
         emit Burned(msg.sender, pocketId, amount);
     }
@@ -192,12 +194,12 @@ contract Vault is IVault, AccessControl, Multicall {
     function healthFactor(address user, uint88 pocketId) public view returns (uint256) {
         uint256 mintValue = mintedValueOfUser(user, pocketId);
         if (mintValue == 0) return type(uint256).max;
-        return collateralValueOfUser(user, pocketId) / mintValue;
+        return collateralValueOfUser(user, pocketId) * 1e18 / mintValue;
     }
 
     /// @inheritdoc IVault
     function collateralValueOf(uint256 amount) public view returns (uint256) {
-        return amount * latestPrice();
+        return amount * latestPrice() / 10 ** _getVaultStorage().oracle.assetDecimals();
     }
 
     /// @inheritdoc IVault
@@ -207,7 +209,7 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function mintedValueOf(uint256 amount) public view returns (uint256) {
-        return amount * TCAPV2.latestPrice();
+        return TCAPV2.latestPriceOf(amount);
     }
 
     /// @inheritdoc IVault
@@ -292,7 +294,6 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     function _updateLiquidationThreshold(uint96 newLiquidationThreshold) internal {
-        // TODO finalize values
         if (newLiquidationThreshold < Constants.MIN_LIQUIDATION_THRESHOLD || newLiquidationThreshold > Constants.MAX_LIQUIDATION_THRESHOLD) {
             revert InvalidValue();
         }

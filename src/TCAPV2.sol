@@ -21,8 +21,7 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     bytes32 public constant VAULT_ROLE = keccak256("VAULT_ROLE");
     bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
 
-    // TODO define divisor
-    uint256 public constant DIVISOR = 1e18;
+    uint256 public constant DIVISOR = 1e10;
 
     function _getTCAPV2Storage() private pure returns (TCAPV2Storage storage $) {
         assembly {
@@ -77,9 +76,14 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     }
 
     /// @inheritdoc ITCAPV2
-    function latestPrice() external view returns (uint256) {
+    function latestPrice() public view returns (uint256) {
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         return $.oracle.latestPrice();
+    }
+
+    /// @inheritdoc ITCAPV2
+    function latestPriceOf(uint256 amount) external view returns (uint256) {
+        return amount * latestPrice() / 10 ** decimals();
     }
 
     function _setOracle(address newOracle) internal {

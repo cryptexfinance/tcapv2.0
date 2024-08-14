@@ -121,7 +121,7 @@ contract WithdrawTest is Deposited {
         uint256 balanceRecipientBefore = underlyingToken.balanceOf(recipient);
         uint256 balancePocketBefore = overlyingAToken.balanceOf(address(aAVEv3Pocket));
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Withdraw(user, recipient, shares, shares, shares);
+        emit IPocket.Withdrawal(user, recipient, shares, shares, shares);
         aAVEv3Pocket.withdraw(user, shares, recipient);
         assertEq(aAVEv3Pocket.totalShares(), totalSharesBefore - shares);
         assertEq(aAVEv3Pocket.sharesOf(user), sharesBefore - shares);
