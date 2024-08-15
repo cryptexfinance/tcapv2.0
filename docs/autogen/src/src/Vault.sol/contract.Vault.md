@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/34a621b9d7f953a62f8f826356dda361dde059e4/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/05c250acaec0d92c080577b2a2c7be3ffe8724ff/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -597,7 +597,7 @@ function pocketEnabled(uint88 id) external view returns (bool);
 
 
 ```solidity
-function _takeFee(address user, uint88 pocketId) internal;
+function _takeFee(IPocket pocket, address user, uint88 pocketId) internal;
 ```
 
 ### _updateInterestRate

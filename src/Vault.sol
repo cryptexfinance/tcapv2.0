@@ -153,9 +153,9 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function withdraw(uint88 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId) returns (uint256 shares) {
-        _takeFee(msg.sender, pocketId);
         // @audit should be able to withdraw even if pocket is disabled
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        _takeFee(pocket, msg.sender, pocketId);
         shares = pocket.withdraw(msg.sender, amount, to);
         emit Withdrawn(msg.sender, pocketId, to, amount, shares);
     }
@@ -180,14 +180,17 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function liquidate(address user, uint88 pocketId) external {
-        _takeFee(user, pocketId);
+        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        // @audit should be able to liquidate even if pocket is disabled
+        _takeFee(pocket, user, pocketId);
         uint256 mintAmount = mintedAmountOf(user, pocketId);
         uint256 mintValue = mintedValueOf(mintAmount);
         uint256 collateralAmount = collateralOf(user, pocketId);
         uint256 collateralValue = collateralValueOf(collateralAmount);
-        if (mintValue == 0 || collateralValue / mintValue >= liquidationThreshold()) revert LoanHealthy();
-        _getPocket(pocketId).withdraw(user, collateralAmount, msg.sender);
+        if (mintValue == 0 || collateralValue * 1e18 / mintValue >= liquidationThreshold()) revert LoanHealthy();
+        pocket.withdraw(user, collateralAmount, msg.sender);
         TCAPV2.burn(msg.sender, mintAmount);
+        emit Liquidated(msg.sender, user, pocketId, collateralAmount, mintAmount);
     }
 
     /// @inheritdoc IVault
@@ -219,7 +222,8 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function collateralOf(address user, uint88 pocketId) public view returns (uint256) {
-        return _getPocket(pocketId).balanceOf(user) - outstandingInterestOf(user, pocketId);
+        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        return pocket.balanceOf(user) - outstandingInterestOf(user, pocketId);
     }
 
     /// @inheritdoc IVault
@@ -269,10 +273,10 @@ contract Vault is IVault, AccessControl, Multicall {
         return _getVaultStorage().pockets[id].enabled;
     }
 
-    function _takeFee(address user, uint88 pocketId) internal {
-        IPocket pocket = _getPocket(pocketId);
+    function _takeFee(IPocket pocket, address user, uint88 pocketId) internal {
         uint256 interest = outstandingInterestOf(user, pocketId);
-        // todo check if interest exceeds balance necessary?
+        uint256 collateral = collateralOf(user, pocketId);
+        if (interest > collateral) interest = collateral;
         VaultStorage storage $ = _getVaultStorage();
         address feeRecipient_ = $.feeRecipient;
         if (interest != 0 && feeRecipient_ != address(0)) {

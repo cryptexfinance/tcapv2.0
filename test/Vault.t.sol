@@ -415,6 +415,26 @@ contract WithdrawalTest is PocketSetup {
         vault.withdraw(pocketId, burnAmount, recipient);
     }
 
+    function test_ShouldBeAbleToWithdrawWhenPocketIsDisabled(address user, uint256 amount) public {
+        vm.assume(user != address(0) && user != address(vaultProxyAdmin));
+        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
+        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1);
+        deposit(user, depositAmount);
+        vm.prank(user);
+        vault.mint(pocketId, mintAmount);
+        uint256 burnAmount = bound(amount, 0, depositAmount - mintAmount);
+        address recipient = makeAddr("recipient");
+        vault.disablePocket(pocketId);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(pocket), recipient, burnAmount);
+        vm.expectEmit(true, true, false, true);
+        emit IPocket.Withdrawal(user, recipient, burnAmount, burnAmount, burnAmount);
+        vm.expectEmit(true, true, false, true);
+        emit IVault.Withdrawn(user, pocketId, recipient, burnAmount, burnAmount);
+        vm.prank(user);
+        vault.withdraw(pocketId, burnAmount, recipient);
+    }
+
     function test_ShouldTakeFeeOnWithdrawal(uint32 timestamp) public {
         address user = makeAddr("user");
         uint256 amount = 100 ether;
@@ -454,5 +474,35 @@ contract BurnTest is PocketSetup {
         emit IVault.Burned(user, pocketId, burnAmount);
         vm.prank(user);
         vault.burn(pocketId, burnAmount);
+    }
+}
+
+contract LiquidationTest is PocketSetup {
+    function test_RevertIf_LoanHealthyDuringLiquidation(address user, uint256 amount) public {
+        vm.assume(user != address(0) && user != address(vaultProxyAdmin));
+        uint256 depositAmount = deposit(user, amount);
+        vm.prank(user);
+        uint256 mintAmount = bound(amount, 0, depositAmount == 0 ? 0 : depositAmount - 1);
+        vault.mint(pocketId, mintAmount);
+        tCAPV2.mint(address(this), mintAmount);
+        vm.expectRevert(IVault.LoanHealthy.selector);
+        vault.liquidate(user, pocketId);
+    }
+
+    function test_ShouldBeAbleToLiquidate(address user, uint256 amount) public {
+        vm.assume(user != address(0) && user != address(vaultProxyAdmin));
+        uint256 depositAmount = deposit(user, amount);
+        vm.assume(depositAmount > 0);
+        vm.prank(user);
+        uint256 mintAmount = bound(amount, 1, depositAmount);
+        vault.mint(pocketId, mintAmount);
+        uint256 collateralValue = vault.collateralValueOfUser(user, pocketId);
+        uint256 mintValue = vault.mintedValueOf(mintAmount);
+        uint256 multiplier = mintValue * 10_000 / (collateralValue) - 1;
+        feed.setMultiplier(multiplier);
+        tCAPV2.mint(address(this), mintAmount);
+        vm.expectEmit(true, true, true, true);
+        emit IVault.Liquidated(address(this), user, pocketId, depositAmount, mintAmount);
+        vault.liquidate(user, pocketId);
     }
 }

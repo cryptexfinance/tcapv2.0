@@ -1,5 +1,5 @@
 # AggregatedChainlinkOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/34a621b9d7f953a62f8f826356dda361dde059e4/src/oracle/AggregatedChainlinkOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/9d4c3eb640619bb6621126fc493a74a0cc1fc716/src/oracle/AggregatedChainlinkOracle.sol)
 
 **Inherits:**
 [BaseOracleUSD](/src/oracle/BaseOracleUSD.sol/abstract.BaseOracleUSD.md)
@@ -15,10 +15,10 @@ AggregatorV3Interface public immutable feed;
 ```
 
 
-### _decimals
+### feedDecimals
 
 ```solidity
-uint256 internal immutable _decimals;
+uint256 public immutable feedDecimals;
 ```
 
 
