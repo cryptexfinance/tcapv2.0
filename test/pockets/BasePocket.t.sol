@@ -75,14 +75,14 @@ contract InitializedTest is Initialized {
 
 contract PermissionTest is Initialized {
     function test_revertIf_notVault_deposit(address sender) public {
-        vm.assume(sender != address(this));
+        vm.assume(sender != address(this) && sender != address(basePocketProxyAdmin));
         vm.prank(sender);
         vm.expectRevert(IPocket.Unauthorized.selector);
         basePocket.registerDeposit(address(1), 1);
     }
 
     function test_revertIf_notVault_withdraw(address sender) public {
-        vm.assume(sender != address(this));
+        vm.assume(sender != address(this) && sender != address(basePocketProxyAdmin));
         vm.prank(sender);
         vm.expectRevert(IPocket.Unauthorized.selector);
         basePocket.withdraw(address(1), 1, address(1));

@@ -498,8 +498,9 @@ contract LiquidationTest is PocketSetup {
         vault.mint(pocketId, mintAmount);
         uint256 collateralValue = vault.collateralValueOfUser(user, pocketId);
         uint256 mintValue = vault.mintedValueOf(mintAmount);
-        uint256 multiplier = mintValue * 10_000 / (collateralValue) - 1;
-        feed.setMultiplier(multiplier);
+        uint256 multiplier = mintValue * 10_000 / (collateralValue);
+        vm.assume(multiplier > 1);
+        feed.setMultiplier(multiplier - 1);
         tCAPV2.mint(address(this), mintAmount);
         vm.expectEmit(true, true, true, true);
         emit IVault.Liquidated(address(this), user, pocketId, depositAmount, mintAmount);

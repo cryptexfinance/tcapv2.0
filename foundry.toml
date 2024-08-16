@@ -8,6 +8,7 @@ via_ir = false
 solc = "0.8.26"
 verbosity = 2
 ffi = true
+fuzz.runs = 10000
 
 fs_permissions = [
   {access = "read", path = "test/bin"}
