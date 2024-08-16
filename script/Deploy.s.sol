@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.23;
+pragma solidity 0.8.26;
 
 import "forge-std/Script.sol";
-import "script/deployers/CounterDeployer.s.sol";
+import "script/deployers/TCAPV2Deployer.s.sol";
 
-contract Deploy is Script, CounterDeployer {
+contract Deploy is Script, TCAPV2Deployer {
     using stdJson for string;
 
     function run() public {
         address proxyAdmin = address(1);
-        uint256 initialNumber = 5;
-        deployCounterTransparent(proxyAdmin, initialNumber);
+        address admin = address(2);
+        deployTCAPV2Transparent(proxyAdmin, admin);
     }
 }
