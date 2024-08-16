@@ -1,5 +1,6 @@
 #!/bin/bash
 
+rm -rf docs/autogen
 # generate docs
 forge doc -b -o docs/autogen
 

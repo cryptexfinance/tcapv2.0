@@ -4,15 +4,22 @@ out = "out"
 libs = ["lib"]
 optimizer = true
 optimizer_runs = 999999
-via_ir = true
-solc = "0.8.23"
+via_ir = false
+solc = "0.8.26"
 verbosity = 2
 ffi = true
+fuzz.runs = 10000
+
+fs_permissions = [
+  {access = "read", path = "test/bin"}
+]
 
 remappings = [
   "forge-std=lib/forge-std/src",
   "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts",
-  "@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts"
+  "@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts",
+  "@aave=lib/aave-v3-core/contracts",
+  "@chainlink=lib/foundry-chainlink-toolkit/src"
 ]
 
 [profile.intense.fuzz]

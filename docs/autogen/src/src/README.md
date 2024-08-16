@@ -2,4 +2,8 @@
 
 # Contents
 - [interface](/src/interface)
-- [Counter](Counter.sol/contract.Counter.md)
+- [lib](/src/lib)
+- [oracle](/src/oracle)
+- [pockets](/src/pockets)
+- [TCAPV2](TCAPV2.sol/contract.TCAPV2.md)
+- [Vault](Vault.sol/contract.Vault.md)
