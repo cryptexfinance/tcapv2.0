@@ -1,3 +1,3 @@
 # Documentation
 
-Documentation about the project can be placed here. This is a good place to put architecture diagrams, or other documentation that is not specific to a single contract.
+The auto-generated documentation from the natspec comments in the contracts can be found [here](./autogen/src/SUMMARY.md).
