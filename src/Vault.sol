@@ -9,6 +9,7 @@ import {IPocket} from "./interface/pockets/IPocket.sol";
 import {FeeCalculatorLib} from "./lib/FeeCalculatorLib.sol";
 import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {SafeTransferLib} from "solady/src/utils/SafeTransferLib.sol";
 import {IOracle} from "./interface/IOracle.sol";
 import {Constants} from "./lib/Constants.sol";
 
@@ -17,6 +18,7 @@ import {Constants} from "./lib/Constants.sol";
 contract Vault is IVault, AccessControl, Multicall {
     using FeeCalculatorLib for MintData;
     using SafeCast for uint256;
+    using SafeTransferLib for address;
 
     struct Deposit {
         address user;
@@ -133,7 +135,7 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function deposit(uint88 pocketId, uint256 amount) external returns (uint256 shares) {
         IPocket pocket = _getPocket(pocketId);
-        COLLATERAL.transferFrom(msg.sender, address(pocket), amount);
+        address(COLLATERAL).safeTransferFrom(msg.sender, address(pocket), amount);
         shares = pocket.registerDeposit(msg.sender, amount);
         emit Deposited(msg.sender, pocketId, amount, shares);
     }
