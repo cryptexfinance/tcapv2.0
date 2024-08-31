@@ -73,7 +73,7 @@ abstract contract PocketSetup is Permitted {
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     address pocket;
-    uint88 pocketId;
+    uint96 pocketId;
 
     function setUp() public virtual override {
         super.setUp();
@@ -172,13 +172,13 @@ contract PermissionsTest is Initialized {
 
 contract ManagementTest is Permitted {
     function test_RevertIf_InterestRateOutOfBounds(uint16 interestRate) public {
-        interestRate = uint16(bound(interestRate, FeeCalculatorLib.MAX_FEE + 1, type(uint16).max));
+        interestRate = uint16(bound(interestRate, Constants.MAX_FEE + 1, type(uint16).max));
         vm.expectRevert(IVault.InvalidValue.selector);
         vault.updateInterestRate(interestRate);
     }
 
     function test_ShouldUpdateInterestRate(uint16 interestRate) public {
-        interestRate = uint16(bound(interestRate, 1, FeeCalculatorLib.MAX_FEE));
+        interestRate = uint16(bound(interestRate, 1, Constants.MAX_FEE));
         vm.expectEmit(true, true, false, true);
         emit IVault.InterestRateUpdated(interestRate);
         vault.updateInterestRate(interestRate);
@@ -247,13 +247,13 @@ contract PocketTest is Permitted {
         address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
         uint256 pocketId = 1;
         vm.expectEmit(true, true, false, true);
-        emit IVault.PocketAdded(uint88(pocketId), IPocket(basePocket));
+        emit IVault.PocketAdded(uint96(pocketId), IPocket(basePocket));
         vault.addPocket(IPocket(basePocket));
-        assertEq(address(vault.pockets(uint88(pocketId))), basePocket);
-        assertEq(vault.pocketEnabled(uint88(pocketId)), true);
+        assertEq(address(vault.pockets(uint96(pocketId))), basePocket);
+        assertEq(vault.pocketEnabled(uint96(pocketId)), true);
     }
 
-    function test_RevertIf_PocketNotEnabledOnDisable(uint88 pocketId) public {
+    function test_RevertIf_PocketNotEnabledOnDisable(uint96 pocketId) public {
         vm.assume(pocketId != 1);
         address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
         vault.addPocket(IPocket(basePocket));
@@ -266,7 +266,7 @@ contract PocketTest is Permitted {
         address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
         vault.addPocket(IPocket(basePocket));
         vm.expectEmit(true, true, false, true);
-        emit IVault.PocketDisabled(uint88(1));
+        emit IVault.PocketDisabled(uint96(1));
         vault.disablePocket(1);
     }
 }
@@ -284,8 +284,8 @@ contract DepositTest is PocketSetup {
         vault.depositWithPermit(0, 1, permit, "");
     }
 
-    function test_RevertIf_PocketDoesNotExist(uint88 id) public {
-        id = uint88(bound(id, 2, type(uint88).max));
+    function test_RevertIf_PocketDoesNotExist(uint96 id) public {
+        id = uint96(bound(id, 2, type(uint96).max));
         vm.expectRevert(abi.encodeWithSelector(IVault.PocketNotEnabled.selector, id));
         vault.deposit(id, 1);
         vm.expectRevert(abi.encodeWithSelector(IVault.PocketNotEnabled.selector, id));

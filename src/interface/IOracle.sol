@@ -15,5 +15,5 @@ interface IOracle {
     function latestPrice() external view returns (uint256);
 
     /// @notice returns the assets of the underlying asset
-    function assetDecimals() external view returns (uint256);
+    function assetDecimals() external view returns (uint8);
 }

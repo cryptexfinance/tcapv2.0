@@ -25,9 +25,9 @@ abstract contract VaultDeployer is Script {
         uint16 initialFee,
         address oracle_,
         address feeRecipient_,
-        uint96 liquidationThreshold_
+        IVault.LiquidationParams memory liquidationParams_
     ) internal returns (address implementation, address proxyAdmin, address proxy) {
-        bytes memory initData = abi.encodeCall(Vault.initialize, (admin, initialFee, oracle_, feeRecipient_, liquidationThreshold_));
+        bytes memory initData = abi.encodeCall(Vault.initialize, (admin, initialFee, oracle_, feeRecipient_, liquidationParams_));
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
