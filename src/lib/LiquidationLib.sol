@@ -30,7 +30,7 @@ library LiquidationLib {
         uint256 currentHealthFactor = healthFactor(mintAmount, tcapPrice, collateralAmount, collateralPrice, collateralDecimals);
         if (currentHealthFactor >= targetHealthFactor) return 0;
         uint256 numerator = mintAmount * (targetHealthFactor - currentHealthFactor);
-        // TODO: enforce when setting
+        // enforced when setting liquidation params
         assert(1e18 + liquidationPenalty < targetHealthFactor);
         uint256 denominator = targetHealthFactor - 1e18 - liquidationPenalty;
         return numerator / denominator;

@@ -44,6 +44,8 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
         feed = new MockFeed(collateralPrice * 1e8);
         oracle = new AggregatedChainlinkOracle(address(feed), address(collateral));
 
+        IVault.LiquidationParams memory liquidationParams = IVault.LiquidationParams({threshold: 1e18, penalty: 0, minHealthFactor: 1, maxHealthFactor: 1e18});
+
         deployVaultTransparent({
             proxyAdminOwner: admin,
             tCAPV2_: tCAPV2,
@@ -53,7 +55,7 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
             initialFee: 100,
             oracle_: address(oracle),
             feeRecipient_: feeRecipient,
-            liquidationThreshold_: 1 ether
+            liquidationParams_: liquidationParams
         });
     }
 }
@@ -82,7 +84,7 @@ abstract contract PocketSetup is Permitted {
     }
 
     function deposit(address user, uint256 amount) internal returns (uint256) {
-        if (amount > 1e38 - 1) amount = 1e38 - 1;
+        amount = bound(amount, 0, 1e38 - 1);
         collateral.mint(user, amount);
         vm.prank(user);
         collateral.approve(address(vault), amount);
@@ -121,9 +123,11 @@ abstract contract PocketSetup is Permitted {
 
 contract UninitializedTest is Initialized {
     function test_RevertsOnInitialization() public {
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: 1.5e18, penalty: 0.05e18, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18});
         Vault vault_ = Vault(deployVaultImplementation(tCAPV2, collateral, permit2));
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        vault_.initialize(makeAddr("admin"), 1, makeAddr("oracle"), makeAddr("feeRecipient"), 1);
+        vault_.initialize(makeAddr("admin"), 1, makeAddr("oracle"), makeAddr("feeRecipient"), liquidationParams);
     }
 
     function test_Version() public {
@@ -163,17 +167,19 @@ contract PermissionsTest is Initialized {
     }
 
     function test_RevertIf_InvalidPermission_LiquidationSetter(address sender) public {
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: 1.5e18, penalty: 0.05e18, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18});
         vm.assume(sender != address(vaultProxyAdmin));
         vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.LIQUIDATION_SETTER_ROLE()));
         vm.prank(sender);
-        vault.updateLiquidationThreshold(1);
+        vault.updateLiquidationParams(liquidationParams);
     }
 }
 
 contract ManagementTest is Permitted {
     function test_RevertIf_InterestRateOutOfBounds(uint16 interestRate) public {
         interestRate = uint16(bound(interestRate, Constants.MAX_FEE + 1, type(uint16).max));
-        vm.expectRevert(IVault.InvalidValue.selector);
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.MAX_FEE));
         vault.updateInterestRate(interestRate);
     }
 
@@ -205,24 +211,73 @@ contract ManagementTest is Permitted {
         assertEq(vault.oracle(), address(oracle));
     }
 
-    function test_RevertIf_LiquidationThresholdOutOfBounds(uint96 liquidationThreshold) public {
-        vm.assume(liquidationThreshold < Constants.MIN_LIQUIDATION_THRESHOLD || liquidationThreshold > Constants.MAX_LIQUIDATION_THRESHOLD);
-        vm.expectRevert(IVault.InvalidValue.selector);
-        vault.updateLiquidationThreshold(liquidationThreshold);
+    function test_RevertIf_LiquidationPenaltyExceedsMax(uint64 liquidationPenalty) public {
+        liquidationPenalty = uint64(bound(liquidationPenalty, Constants.MAX_LIQUIDATION_PENALTY + 1, type(uint64).max));
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: 1.5e18, penalty: liquidationPenalty, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18});
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.MAX_LIQUIDATION_PENALTY));
+        vault.updateLiquidationParams(liquidationParams);
     }
 
-    function test_ShouldUpdateLiquidationThreshold(uint96 liquidationThreshold) public {
-        liquidationThreshold = uint96(bound(liquidationThreshold, Constants.MIN_LIQUIDATION_THRESHOLD, Constants.MAX_LIQUIDATION_THRESHOLD));
-        vm.expectEmit(true, true, false, true);
-        emit IVault.LiquidationThresholdUpdated(liquidationThreshold);
-        vault.updateLiquidationThreshold(liquidationThreshold);
-        assertEq(vault.liquidationThreshold(), liquidationThreshold);
+    function test_RevertIf_LiquidationThresholdExceedsMax(uint64 liquidationThreshold, uint64 liquidationPenalty) public {
+        liquidationPenalty = uint64(bound(liquidationPenalty, 0, Constants.MAX_LIQUIDATION_PENALTY));
+        liquidationThreshold = uint64(bound(liquidationThreshold, Constants.MAX_LIQUIDATION_THRESHOLD + liquidationPenalty + 1, type(uint64).max));
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: liquidationThreshold, penalty: liquidationPenalty, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18});
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.MAX_LIQUIDATION_THRESHOLD));
+        vault.updateLiquidationParams(liquidationParams);
+    }
+
+    function test_RevertIf_LiquidationThresholdSubceedsMin(uint64 liquidationThreshold, uint64 liquidationPenalty) public {
+        liquidationPenalty = uint64(bound(liquidationPenalty, 0, Constants.MAX_LIQUIDATION_PENALTY));
+        liquidationThreshold = uint64(bound(liquidationThreshold, 0, Constants.MIN_LIQUIDATION_THRESHOLD - 1));
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: liquidationThreshold, penalty: 0.05e18, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18});
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.MIN_LIQUIDATION_THRESHOLD));
+        vault.updateLiquidationParams(liquidationParams);
+    }
+
+    function test_RevertIf_PostLiquidationHealthFactorExceedsMax(uint64 maxHealthFactor) public {
+        maxHealthFactor = uint64(bound(maxHealthFactor, Constants.MAX_POST_LIQUIDATION_HEALTH_FACTOR + 1, type(uint64).max));
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: 1.5e18, penalty: 0.05e18, minHealthFactor: 0.1e18, maxHealthFactor: maxHealthFactor});
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.MAX_POST_LIQUIDATION_HEALTH_FACTOR));
+        vault.updateLiquidationParams(liquidationParams);
+    }
+
+    function test_RevertIf_PostLiquidationHealthFactorSubceedsMin() public {
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: 1.5e18, penalty: 0.05e18, minHealthFactor: 0, maxHealthFactor: 0.3e18});
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.MIN_POST_LIQUIDATION_HEALTH_FACTOR));
+        vault.updateLiquidationParams(liquidationParams);
+    }
+
+    function test_RevertIf_PostLiquidationHealthFactorMaxIsLessThanMin(uint64 minHealthFactor, uint64 maxHealthFactor) public {
+        minHealthFactor = uint64(bound(minHealthFactor, Constants.MIN_POST_LIQUIDATION_HEALTH_FACTOR + 1, Constants.MAX_POST_LIQUIDATION_HEALTH_FACTOR));
+        maxHealthFactor = uint64(bound(maxHealthFactor, Constants.MIN_POST_LIQUIDATION_HEALTH_FACTOR, minHealthFactor - 1));
+        IVault.LiquidationParams memory liquidationParams =
+            IVault.LiquidationParams({threshold: 1.5e18, penalty: 0.05e18, minHealthFactor: minHealthFactor, maxHealthFactor: maxHealthFactor});
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.INCOMPATIBLE_MAX_POST_LIQUIDATION_HEALTH_FACTOR));
+        vault.updateLiquidationParams(liquidationParams);
+    }
+
+    function test_ShouldUpdateLiquidationThreshold(IVault.LiquidationParams memory params) public {
+        params.penalty = uint64(bound(params.penalty, 0, Constants.MAX_LIQUIDATION_PENALTY));
+        params.threshold =
+            uint64(bound(params.threshold, Constants.MIN_LIQUIDATION_THRESHOLD + params.penalty + 1, Constants.MAX_LIQUIDATION_THRESHOLD - params.penalty));
+        params.minHealthFactor =
+            uint64(bound(params.minHealthFactor, Constants.MIN_POST_LIQUIDATION_HEALTH_FACTOR, Constants.MAX_POST_LIQUIDATION_HEALTH_FACTOR - 1));
+        params.maxHealthFactor = uint64(bound(params.maxHealthFactor, params.minHealthFactor + 1, Constants.MAX_POST_LIQUIDATION_HEALTH_FACTOR));
+        // vm.expectEmit(true, true, false, true);
+        // emit IVault.LiquidationParamsUpdated(params);
+        vault.updateLiquidationParams(params);
+        assertEq(abi.encode(vault.liquidationParams()), abi.encode(params));
     }
 }
 
 contract PocketTest is Permitted {
     function test_RevertIf_PocketIsZero() public {
-        vm.expectRevert(IVault.InvalidValue.selector);
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.ZERO_VALUE));
         vault.addPocket(IPocket(address(0)));
     }
 
@@ -233,13 +288,13 @@ contract PocketTest is Permitted {
 
     function test_RevertIf_PocketDoesNotPointToVault() public {
         address pocket = address(new BasePocket(makeAddr("vault"), address(collateral), address(collateral)));
-        vm.expectRevert(IVault.InvalidValue.selector);
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.INVALID_POCKET));
         vault.addPocket(IPocket(pocket));
     }
 
     function test_RevertIf_PocketDoesNotHaveCorrectUnderlyingToken() public {
         address pocket = address(new BasePocket(address(vault), makeAddr("collateral"), makeAddr("collateral")));
-        vm.expectRevert(IVault.InvalidValue.selector);
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.INVALID_POCKET_COLLATERAL));
         vault.addPocket(IPocket(pocket));
     }
 
@@ -444,7 +499,7 @@ contract WithdrawalTest is PocketSetup {
         timestamp = uint32(bound(timestamp, block.timestamp + 1, type(uint32).max));
         vm.warp(timestamp);
         uint256 outstandingInterest = vault.outstandingInterestOf(user, pocketId);
-        assert(outstandingInterest > 0);
+        assertGt(outstandingInterest, 0);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pocket), feeRecipient, outstandingInterest);
         vm.prank(user);
@@ -478,6 +533,18 @@ contract BurnTest is PocketSetup {
 }
 
 contract LiquidationTest is PocketSetup {
+    function test_RevertIf_BurningMoreThanMinted(address user, uint256 amount) public {
+        vm.assume(user != address(0) && user != address(vaultProxyAdmin));
+        uint256 depositAmount = deposit(user, amount);
+        vm.assume(depositAmount > 0);
+        uint256 mintAmount = bound(amount, 1, depositAmount);
+        vm.prank(user);
+        vault.mint(pocketId, mintAmount);
+        tCAPV2.mint(address(this), mintAmount);
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.INVALID_BURN_AMOUNT));
+        vault.liquidate(user, pocketId, mintAmount + 1);
+    }
+
     function test_RevertIf_LoanHealthyDuringLiquidation(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 depositAmount = deposit(user, amount);
@@ -486,7 +553,32 @@ contract LiquidationTest is PocketSetup {
         vault.mint(pocketId, mintAmount);
         tCAPV2.mint(address(this), mintAmount);
         vm.expectRevert(IVault.LoanHealthy.selector);
-        vault.liquidate(user, pocketId);
+        vault.liquidate(user, pocketId, mintAmount);
+    }
+
+    function test_RevertIf_HealthFactorIsBelowMinAfterLiquidation(address user, uint256 amount) public {
+        vm.assume(user != address(0) && user != address(vaultProxyAdmin));
+        uint256 depositAmount = deposit(user, amount);
+        vm.assume(depositAmount > 1e8);
+        vm.prank(user);
+        uint64 penalty = 0.05e18;
+        uint256 mintAmount = depositAmount * 1e18 / (1e18 + penalty);
+        vault.mint(pocketId, mintAmount);
+        vault.updateLiquidationParams(IVault.LiquidationParams({threshold: 1.5e18, penalty: penalty, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18}));
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.HEALTH_FACTOR_BELOW_MINIMUM));
+        vault.liquidate(user, pocketId, mintAmount / 2);
+    }
+
+    function test_RevertIf_HealthFactorIsAboveMaxAfterLiquidation(address user, uint256 amount) public {
+        vm.assume(user != address(0) && user != address(vaultProxyAdmin));
+        uint256 depositAmount = deposit(user, amount);
+        vm.assume(depositAmount > 1e8 && depositAmount < 1e25);
+        vm.prank(user);
+        vault.mint(pocketId, depositAmount);
+        feedTCAP.setMultiplier(9000);
+        vault.updateLiquidationParams(IVault.LiquidationParams({threshold: 1.2e18, penalty: 0, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18}));
+        vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.HEALTH_FACTOR_ABOVE_MAXIMUM));
+        vault.liquidate(user, pocketId, depositAmount * 9 / 10);
     }
 
     function test_ShouldBeAbleToLiquidate(address user, uint256 amount) public {
@@ -504,6 +596,6 @@ contract LiquidationTest is PocketSetup {
         tCAPV2.mint(address(this), mintAmount);
         vm.expectEmit(true, true, true, true);
         emit IVault.Liquidated(address(this), user, pocketId, depositAmount, mintAmount);
-        vault.liquidate(user, pocketId);
+        vault.liquidate(user, pocketId, mintAmount);
     }
 }

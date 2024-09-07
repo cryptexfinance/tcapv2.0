@@ -209,19 +209,21 @@ contract Vault is IVault, AccessControl, Multicall {
             if (burnAmount != mintAmount) revert InvalidValue(IVault.ErrorCode.MUST_LIQUIDATE_ENTIRE_POSITION);
             liquidationReward = collateralAmount;
         } else {
+            uint256 minBurnAmount = LiquidationLib.tokensRequiredForTargetHealthFactor(
+                liquidation.threshold + liquidation.minHealthFactor,
+                mintAmount,
+                tcapPrice,
+                collateralAmount,
+                collateralPrice,
+                liquidation.penalty,
+                assetDecimals
+            );
+
+            // if the minimum burn amount required to reach the minimum health factor is greater than the minted amount, we need to liquidate the entire position
+            if (minBurnAmount > mintAmount) minBurnAmount = mintAmount;
+
             // ensure health factor is above liquidation threshold + min health factor delta after liquidation, e.g., 150% + 10% = 160%
-            if (
-                burnAmount
-                    < LiquidationLib.tokensRequiredForTargetHealthFactor(
-                        liquidation.threshold + liquidation.minHealthFactor,
-                        mintAmount,
-                        tcapPrice,
-                        collateralAmount,
-                        collateralPrice,
-                        liquidation.penalty,
-                        assetDecimals
-                    )
-            ) {
+            if (burnAmount < minBurnAmount) {
                 revert InvalidValue(IVault.ErrorCode.HEALTH_FACTOR_BELOW_MINIMUM);
             }
             // ensure health factor is below liquidation threshold + max health factor delta after liquidation, e.g., 150% + 30% = 180%
@@ -269,7 +271,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function mintedValueOfUser(address user, uint96 pocketId) public view returns (uint256) {
+    function mintedValueOfUser(address user, uint96 pocketId) external view returns (uint256) {
         return mintedValueOf(mintedAmountOf(user, pocketId));
     }
 
@@ -352,9 +354,9 @@ contract Vault is IVault, AccessControl, Multicall {
 
     function _updateLiquidationParams(IVault.LiquidationParams calldata liquidation) internal {
         if (liquidation.penalty > Constants.MAX_LIQUIDATION_PENALTY) revert InvalidValue(IVault.ErrorCode.MAX_LIQUIDATION_PENALTY);
-        if (liquidation.threshold > Constants.MAX_LIQUIDATION_THRESHOLD) revert InvalidValue(IVault.ErrorCode.MAX_LIQUIDATION_THRESHOLD);
-        if (liquidation.threshold <= Constants.MIN_LIQUIDATION_THRESHOLD + liquidation.penalty) {
-            revert InvalidValue(IVault.ErrorCode.INCOMPATIBLE_LIQUIDATION_THRESHOLD);
+        if (liquidation.threshold > Constants.MAX_LIQUIDATION_THRESHOLD - liquidation.penalty) revert InvalidValue(IVault.ErrorCode.MAX_LIQUIDATION_THRESHOLD);
+        if (liquidation.threshold < Constants.MIN_LIQUIDATION_THRESHOLD + liquidation.penalty) {
+            revert InvalidValue(IVault.ErrorCode.MIN_LIQUIDATION_THRESHOLD);
         }
         if (liquidation.minHealthFactor < Constants.MIN_POST_LIQUIDATION_HEALTH_FACTOR) {
             revert InvalidValue(IVault.ErrorCode.MIN_POST_LIQUIDATION_HEALTH_FACTOR);

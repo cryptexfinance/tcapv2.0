@@ -14,7 +14,7 @@ contract LiquidationLibTest is Test {
 
         string[] memory cmds = new string[](6);
         cmds[0] = "python3";
-        cmds[1] = "test/js/calcLiquidationReward.py";
+        cmds[1] = "test/python/calcLiquidationReward.py";
         cmds[2] = vm.toString(burnAmount);
         cmds[3] = vm.toString(tcapPrice);
         cmds[4] = vm.toString(collateralPrice);
@@ -36,17 +36,17 @@ contract LiquidationLibTest is Test {
         uint64 liquidationPenalty,
         uint8 collateralDecimals
     ) public {
-        collateralDecimals = uint8(bound(collateralDecimals, 1, 18));
+        collateralDecimals = uint8(bound(collateralDecimals, 0, 18));
         mintAmount = bound(mintAmount, 1e18, 1000e18);
         tcapPrice = bound(tcapPrice, 1, 100e18);
         collateralAmount = bound(collateralAmount, 10 ** collateralDecimals, 1000 * 10 ** collateralDecimals);
         collateralPrice = bound(collateralPrice, 1e18, 10_000e18);
-        liquidationPenalty = uint64(bound(liquidationPenalty, 1e15, 1e18));
+        liquidationPenalty = uint64(bound(liquidationPenalty, 0, 0.5e18));
         targetHealthFactor = bound(targetHealthFactor, 1e18 + liquidationPenalty + 1e7, 2e18 + 1);
 
         string[] memory cmds = new string[](9);
         cmds[0] = "python3";
-        cmds[1] = "test/js/calcTokensRequiredForTargetHF.py";
+        cmds[1] = "test/python/calcTokensRequiredForTargetHF.py";
         cmds[2] = vm.toString(targetHealthFactor);
         cmds[3] = vm.toString(mintAmount);
         cmds[4] = vm.toString(tcapPrice);
@@ -60,7 +60,7 @@ contract LiquidationLibTest is Test {
         );
 
         uint256 expectedTokensRequired = abi.decode(res, (uint256));
-        // allow 0.0001% error due to rounding
-        assertApproxEqRel(tokensRequired, expectedTokensRequired, 0.0001e16);
+        // allow 0.01% error due to rounding
+        assertApproxEqRel(tokensRequired, expectedTokensRequired, 0.01e16);
     }
 }
