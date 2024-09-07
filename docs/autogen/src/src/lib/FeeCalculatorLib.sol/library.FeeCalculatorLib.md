@@ -1,13 +1,5 @@
 # FeeCalculatorLib
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/34a621b9d7f953a62f8f826356dda361dde059e4/src/lib/FeeCalculatorLib.sol)
-
-
-## State Variables
-### MAX_FEE
-
-```solidity
-uint256 internal constant MAX_FEE = 10_000;
-```
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/adb271543417436c1309ef4ed99a33410b5ee7ce/src/lib/FeeCalculatorLib.sol)
 
 
 ## Functions

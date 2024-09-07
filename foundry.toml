@@ -22,8 +22,11 @@ remappings = [
   "@chainlink=lib/foundry-chainlink-toolkit/src"
 ]
 
+[profile.coverage.fuzz]
+runs = 100
+
 [profile.intense.fuzz]
-runs = 10000
+runs = 100000
 max_test_rejects = 999999
 
 [fmt]

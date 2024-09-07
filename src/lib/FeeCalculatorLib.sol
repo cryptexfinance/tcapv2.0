@@ -3,10 +3,9 @@ pragma solidity ^0.8.0;
 
 import {IVault} from "../interface/IVault.sol";
 import {Vault} from "../Vault.sol";
+import {Constants} from "./Constants.sol";
 
 library FeeCalculatorLib {
-    uint256 internal constant MAX_FEE = 10_000; // 100%
-
     function modifyPosition(Vault.MintData storage $, uint256 mintId, int256 amount) internal {
         uint256 currentIndex = feeIndex($);
         $.deposits[mintId].accruedInterest += outstandingInterest($, currentIndex, mintId);
@@ -18,7 +17,7 @@ library FeeCalculatorLib {
     }
 
     function feeIndex(Vault.MintData storage $) internal view returns (uint256) {
-        return $.feeData.index + (block.timestamp - $.feeData.lastUpdated) * $.feeData.fee * MULTIPLIER() / (365 days * MAX_FEE);
+        return $.feeData.index + (block.timestamp - $.feeData.lastUpdated) * $.feeData.fee * MULTIPLIER() / (365 days * Constants.MAX_FEE);
     }
 
     function updateFeeIndex(Vault.MintData storage $) internal returns (uint256 index) {
@@ -29,7 +28,7 @@ library FeeCalculatorLib {
 
     function setInterestRate(Vault.MintData storage $, uint16 fee) internal {
         updateFeeIndex($);
-        if (fee > MAX_FEE) revert IVault.InvalidValue();
+        if (fee > Constants.MAX_FEE) revert IVault.InvalidValue(IVault.ErrorCode.MAX_FEE);
         $.feeData.fee = fee;
     }
 

@@ -1,5 +1,5 @@
 # AggregatedChainlinkOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/9d4c3eb640619bb6621126fc493a74a0cc1fc716/src/oracle/AggregatedChainlinkOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/adb271543417436c1309ef4ed99a33410b5ee7ce/src/oracle/AggregatedChainlinkOracle.sol)
 
 **Inherits:**
 [BaseOracleUSD](/src/oracle/BaseOracleUSD.sol/abstract.BaseOracleUSD.md)

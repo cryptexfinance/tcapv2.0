@@ -11,11 +11,25 @@ import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol"
 /// @title Vault interface
 /// @notice Vaults manage deposits of collateral and mint TCAP tokens
 interface IVault is IAccessControl, IMulticall, IVersioned {
+    /// @notice Liquidation params of the vault
+    /// @param threshold The liquidation threshold
+    /// @param penalty The liquidation penalty
+    /// @param minHealthFactor The minimum health factor after liquidation added to the liquidation threshold
+    /// @param maxHealthFactor The maximum health factor after liquidation added to the liquidation threshold
+    /// @dev after liquidation the health factor must be liquidationThreshold + minHealthFactor < x < liquidationThreshold + maxHealthFactor
+    /// @dev e.g., liquidationThreshold + 10% < x < liquidationThreshold + 30%
+    struct LiquidationParams {
+        uint64 threshold;
+        uint64 penalty;
+        uint64 minHealthFactor;
+        uint64 maxHealthFactor;
+    }
+
     /// @notice Emitted when a pocket is added
-    event PocketAdded(uint88 pocketId, IPocket pocket);
+    event PocketAdded(uint96 pocketId, IPocket pocket);
 
     /// @notice Emitted when a pocket is disabled
-    event PocketDisabled(uint88 pocketId);
+    event PocketDisabled(uint96 pocketId);
 
     /// @notice Emitted when the interest rate is updated
     event InterestRateUpdated(uint16 fee);
@@ -28,16 +42,16 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param newFeeRecipient The new fee recipient address
     event FeeRecipientUpdated(address indexed newFeeRecipient);
 
-    /// @notice Emitted when the liquidation threshold is updated
-    /// @param newLiquidationThreshold The new liquidation threshold
-    event LiquidationThresholdUpdated(uint256 newLiquidationThreshold);
+    /// @notice Emitted when the liquidation params are updated
+    /// @param newLiquidationParams The new liquidation params
+    event LiquidationParamsUpdated(LiquidationParams newLiquidationParams);
 
     /// @notice Emitted when a deposit of collateral is made
     /// @param user The address of the user who made the deposit
     /// @param pocketId The id of the pocket the deposit was made to
     /// @param collateralAmount The amount of collateral deposited
     /// @param shares The amount of shares minted by the pocket
-    event Deposited(address indexed user, uint88 indexed pocketId, uint256 collateralAmount, uint256 shares);
+    event Deposited(address indexed user, uint96 indexed pocketId, uint256 collateralAmount, uint256 shares);
 
     /// @notice Emitted when a withdrawal of collateral is made
     /// @param user The address of the user who made the withdrawal
@@ -45,19 +59,19 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param recipient The address of the recipient of the withdrawal
     /// @param amount The amount of collateral withdrawn
     /// @param shares The amount of shares burned
-    event Withdrawn(address indexed user, uint88 indexed pocketId, address indexed recipient, uint256 amount, uint256 shares);
+    event Withdrawn(address indexed user, uint96 indexed pocketId, address indexed recipient, uint256 amount, uint256 shares);
 
     /// @notice Emitted when TCAP tokens are minted
     /// @param user The address of the user who minted the tokens
     /// @param pocketId The id of the pocket where the collateral is stored
     /// @param amount The amount of TCAP tokens minted
-    event Minted(address indexed user, uint88 indexed pocketId, uint256 amount);
+    event Minted(address indexed user, uint96 indexed pocketId, uint256 amount);
 
     /// @notice Emitted when TCAP tokens are burned
     /// @param user The address of the user who burned the tokens
     /// @param pocketId The id of the pocket where the collateral is stored
     /// @param amount The amount of TCAP tokens burned
-    event Burned(address indexed user, uint88 indexed pocketId, uint256 amount);
+    event Burned(address indexed user, uint96 indexed pocketId, uint256 amount);
 
     /// @notice Emitted when a loan of TCAP tokens is liquidated
     /// @param liquidator The address of the liquidator
@@ -65,13 +79,31 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param pocketId The id of the pocket where the collateral is stored
     /// @param collateralAmount The amount of collateral liquidated
     /// @param mintAmount The amount of TCAP tokens liquidated
-    event Liquidated(address indexed liquidator, address indexed user, uint88 indexed pocketId, uint256 collateralAmount, uint256 mintAmount);
+    event Liquidated(address indexed liquidator, address indexed user, uint96 indexed pocketId, uint256 collateralAmount, uint256 mintAmount);
+
+    enum ErrorCode {
+        ZERO_VALUE,
+        INVALID_POCKET,
+        INVALID_POCKET_COLLATERAL,
+        MAX_FEE,
+        MAX_LIQUIDATION_PENALTY,
+        MAX_LIQUIDATION_THRESHOLD,
+        MIN_LIQUIDATION_THRESHOLD,
+        MAX_POST_LIQUIDATION_HEALTH_FACTOR,
+        MIN_POST_LIQUIDATION_HEALTH_FACTOR,
+        INCOMPATIBLE_MAX_POST_LIQUIDATION_HEALTH_FACTOR,
+        INVALID_BURN_AMOUNT,
+        MUST_LIQUIDATE_ENTIRE_POSITION,
+        HEALTH_FACTOR_BELOW_MINIMUM,
+        HEALTH_FACTOR_ABOVE_MAXIMUM
+    }
 
     /// @notice Thrown when a user provides an invalid value
-    error InvalidValue();
+    /// @param code The identifier of the error
+    error InvalidValue(ErrorCode code);
 
     /// @notice Thrown when a user tries to deposit to a pocket that is not enabled
-    error PocketNotEnabled(uint88 pocketId);
+    error PocketNotEnabled(uint96 pocketId);
 
     /// @notice Thrown when a user provides an invalid token with a permit signature
     error InvalidToken();
@@ -89,12 +121,12 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param pocket The pocket to add
     /// @return pocketId The generated id of the pocket
     /// @dev Only callable by the admin
-    function addPocket(IPocket pocket) external returns (uint88 pocketId);
+    function addPocket(IPocket pocket) external returns (uint96 pocketId);
 
     /// @notice Disables a pocket to be used for deposits
     /// @param pocketId The id of the pocket to disable
     /// @dev Only callable by the admin
-    function disablePocket(uint88 pocketId) external;
+    function disablePocket(uint96 pocketId) external;
 
     /// @notice Updates the interest rate of the vault
     /// @param fee The new interest rate
@@ -111,16 +143,16 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @dev Only callable by the oracle setter
     function updateOracle(address newOracle) external;
 
-    /// @notice Updates the liquidation threshold of the vault
-    /// @param newLiquidationThreshold The new liquidation threshold
+    /// @notice Updates the liquidation params of the vault
+    /// @param newLiquidationParams The new liquidation params
     /// @dev Only callable by the admin
-    function updateLiquidationThreshold(uint96 newLiquidationThreshold) external;
+    function updateLiquidationParams(LiquidationParams calldata newLiquidationParams) external;
 
     /// @notice Deposits collateral into a pocket
     /// @param pocketId The id of the pocket to deposit to
     /// @param collateralAmount The amount of collateral to deposit
     /// @return shares The amount of shares minted by the pocket
-    function deposit(uint88 pocketId, uint256 collateralAmount) external returns (uint256 shares);
+    function deposit(uint96 pocketId, uint256 collateralAmount) external returns (uint256 shares);
 
     /// @notice Deposits collateral into a pocket using a permit2 signature transfer
     /// @param pocketId The id of the pocket to deposit to
@@ -128,7 +160,7 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param permit The permit data
     /// @param signature The signature
     /// @return shares The amount of shares minted by the pocket
-    function depositWithPermit(uint88 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+    function depositWithPermit(uint96 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
         external
         returns (uint256 shares);
 
@@ -139,30 +171,32 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @return shares The amount of shares burned
     /// @dev Takes the accrued fees from the user
     /// @dev Throws if the loan is not healthy after withdrawing
-    function withdraw(uint88 pocketId, uint256 amount, address to) external returns (uint256 shares);
+    function withdraw(uint96 pocketId, uint256 amount, address to) external returns (uint256 shares);
 
     /// @notice Mints TCAP tokens
     /// @param pocketId The id of the pocket where the collateral is stored
     /// @param amount The amount of TCAP tokens to mint
     /// @dev Throws if the loan is not healthy after minting
-    function mint(uint88 pocketId, uint256 amount) external;
+    function mint(uint96 pocketId, uint256 amount) external;
 
     /// @notice Burns TCAP tokens
     /// @param pocketId The id of the pocket where the collateral is stored
     /// @param amount The amount of TCAP tokens to burn
-    function burn(uint88 pocketId, uint256 amount) external;
+    function burn(uint96 pocketId, uint256 amount) external;
 
     /// @notice Liquidates a user's loan
     /// @param user The address of the user to liquidate
     /// @param pocketId The id of the pocket where the collateral is stored
+    /// @param burnAmount The amount of TCAP tokens to burn
+    /// @return liquidationReward The amount of collateral liquidated and returned to the liquidator
     /// @dev Throws if the loan is not healthy
-    function liquidate(address user, uint88 pocketId) external;
+    function liquidate(address user, uint96 pocketId, uint256 burnAmount) external returns (uint256 liquidationReward);
 
     /// @notice Returns the health factor of a user
     /// @param user The address of the user
     /// @param pocketId The id of the pocket
     /// @return The health factor of the user
-    function healthFactor(address user, uint88 pocketId) external view returns (uint256);
+    function healthFactor(address user, uint96 pocketId) external view returns (uint256);
 
     /// @notice Returns the value of `amount` of collateral tokens
     /// @param amount The amount of collateral
@@ -173,7 +207,7 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param user The address of the user
     /// @param pocketId The id of the pocket
     /// @return The value of the collateral of the user
-    function collateralValueOfUser(address user, uint88 pocketId) external view returns (uint256);
+    function collateralValueOfUser(address user, uint96 pocketId) external view returns (uint256);
 
     /// @notice Returns the value of `amount` of TCAP tokens
     /// @param amount The amount of TCAP tokens
@@ -184,25 +218,25 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param user The address of the user
     /// @param pocketId The id of the pocket
     /// @return The value of the TCAP tokens of the user
-    function mintedValueOfUser(address user, uint88 pocketId) external view returns (uint256);
+    function mintedValueOfUser(address user, uint96 pocketId) external view returns (uint256);
 
     /// @notice Returns the amount of collateral of a user
     /// @param user The address of the user
     /// @param pocketId The id of the pocket
     /// @return The amount of collateral of the user
-    function collateralOf(address user, uint88 pocketId) external view returns (uint256);
+    function collateralOf(address user, uint96 pocketId) external view returns (uint256);
 
     /// @notice Returns the amount of TCAP tokens minted by a user
     /// @param user The address of the user
     /// @param pocketId The id of the pocket
     /// @return The amount of TCAP tokens minted by the user
-    function mintedAmountOf(address user, uint88 pocketId) external view returns (uint256);
+    function mintedAmountOf(address user, uint96 pocketId) external view returns (uint256);
 
     /// @notice Returns the outstanding interest of a user denominated in the collateral
     /// @param user The address of the user
     /// @param pocketId The id of the pocket
     /// @return The outstanding interest of the user
-    function outstandingInterestOf(address user, uint88 pocketId) external view returns (uint256);
+    function outstandingInterestOf(address user, uint96 pocketId) external view returns (uint256);
 
     /// @return The latest price of the collateral
     function latestPrice() external view returns (uint256);
@@ -216,8 +250,8 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @return The fee recipient of the vault
     function feeRecipient() external view returns (address);
 
-    /// @return The liquidation threshold of the vault
-    function liquidationThreshold() external view returns (uint96);
+    /// @return The liquidation params of the vault
+    function liquidationParams() external view returns (LiquidationParams memory);
 
     /// @return The TCAPV2 contract
     function TCAPV2() external view returns (ITCAPV2);
@@ -226,8 +260,8 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     function COLLATERAL() external view returns (IERC20);
 
     /// @return The pocket with the given id
-    function pockets(uint88 id) external view returns (IPocket);
+    function pockets(uint96 id) external view returns (IPocket);
 
     /// @return Whether the pocket with the given id is enabled
-    function pocketEnabled(uint88 id) external view returns (bool);
+    function pocketEnabled(uint96 id) external view returns (bool);
 }

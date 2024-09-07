@@ -8,7 +8,7 @@ import {IOracle} from "../interface/IOracle.sol";
 /// @notice Base contract that sets the underlying asset and the decimals of that asset for the oracle
 abstract contract BaseOracleUSD is IOracle {
     address public immutable asset;
-    uint256 public immutable assetDecimals;
+    uint8 public immutable assetDecimals;
 
     constructor(address token) {
         asset = token;

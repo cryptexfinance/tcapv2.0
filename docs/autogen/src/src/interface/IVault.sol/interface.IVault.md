@@ -1,5 +1,5 @@
 # IVault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/34a621b9d7f953a62f8f826356dda361dde059e4/src/interface/IVault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/adb271543417436c1309ef4ed99a33410b5ee7ce/src/interface/IVault.sol)
 
 **Inherits:**
 IAccessControl, [IMulticall](/src/interface/IMulticall.sol/interface.IMulticall.md), [IVersioned](/src/interface/IVersioned.sol/interface.IVersioned.md)
@@ -16,7 +16,7 @@ Adds a new pocket to the vault
 
 
 ```solidity
-function addPocket(IPocket pocket) external returns (uint88 pocketId);
+function addPocket(IPocket pocket) external returns (uint96 pocketId);
 ```
 **Parameters**
 
@@ -28,7 +28,7 @@ function addPocket(IPocket pocket) external returns (uint88 pocketId);
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pocketId`|`uint88`|The generated id of the pocket|
+|`pocketId`|`uint96`|The generated id of the pocket|
 
 
 ### disablePocket
@@ -39,13 +39,13 @@ Disables a pocket to be used for deposits
 
 
 ```solidity
-function disablePocket(uint88 pocketId) external;
+function disablePocket(uint96 pocketId) external;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pocketId`|`uint88`|The id of the pocket to disable|
+|`pocketId`|`uint96`|The id of the pocket to disable|
 
 
 ### updateInterestRate
@@ -99,21 +99,21 @@ function updateOracle(address newOracle) external;
 |`newOracle`|`address`|The new oracle address|
 
 
-### updateLiquidationThreshold
+### updateLiquidationParams
 
-Updates the liquidation threshold of the vault
+Updates the liquidation params of the vault
 
 *Only callable by the admin*
 
 
 ```solidity
-function updateLiquidationThreshold(uint96 newLiquidationThreshold) external;
+function updateLiquidationParams(LiquidationParams calldata newLiquidationParams) external;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`newLiquidationThreshold`|`uint96`|The new liquidation threshold|
+|`newLiquidationParams`|`LiquidationParams`|The new liquidation params|
 
 
 ### deposit
@@ -122,13 +122,13 @@ Deposits collateral into a pocket
 
 
 ```solidity
-function deposit(uint88 pocketId, uint256 collateralAmount) external returns (uint256 shares);
+function deposit(uint96 pocketId, uint256 collateralAmount) external returns (uint256 shares);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pocketId`|`uint88`|The id of the pocket to deposit to|
+|`pocketId`|`uint96`|The id of the pocket to deposit to|
 |`collateralAmount`|`uint256`|The amount of collateral to deposit|
 
 **Returns**
@@ -144,7 +144,7 @@ Deposits collateral into a pocket using a permit2 signature transfer
 
 
 ```solidity
-function depositWithPermit(uint88 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+function depositWithPermit(uint96 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
     external
     returns (uint256 shares);
 ```
@@ -152,7 +152,7 @@ function depositWithPermit(uint88 pocketId, uint256 collateralAmount, IPermit2.P
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pocketId`|`uint88`|The id of the pocket to deposit to|
+|`pocketId`|`uint96`|The id of the pocket to deposit to|
 |`collateralAmount`|`uint256`|The amount of collateral to deposit|
 |`permit`|`IPermit2.PermitTransferFrom`|The permit data|
 |`signature`|`bytes`|The signature|
@@ -174,13 +174,13 @@ Withdraws collateral from a pocket
 
 
 ```solidity
-function withdraw(uint88 pocketId, uint256 amount, address to) external returns (uint256 shares);
+function withdraw(uint96 pocketId, uint256 amount, address to) external returns (uint256 shares);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pocketId`|`uint88`|The id of the pocket to withdraw from|
+|`pocketId`|`uint96`|The id of the pocket to withdraw from|
 |`amount`|`uint256`|The amount of collateral to withdraw|
 |`to`|`address`|The address to withdraw the collateral to|
 
@@ -199,13 +199,13 @@ Mints TCAP tokens
 
 
 ```solidity
-function mint(uint88 pocketId, uint256 amount) external;
+function mint(uint96 pocketId, uint256 amount) external;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pocketId`|`uint88`|The id of the pocket where the collateral is stored|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 |`amount`|`uint256`|The amount of TCAP tokens to mint|
 
 
@@ -215,13 +215,13 @@ Burns TCAP tokens
 
 
 ```solidity
-function burn(uint88 pocketId, uint256 amount) external;
+function burn(uint96 pocketId, uint256 amount) external;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pocketId`|`uint88`|The id of the pocket where the collateral is stored|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 |`amount`|`uint256`|The amount of TCAP tokens to burn|
 
 
@@ -233,14 +233,21 @@ Liquidates a user's loan
 
 
 ```solidity
-function liquidate(address user, uint88 pocketId) external;
+function liquidate(address user, uint96 pocketId, uint256 burnAmount) external returns (uint256 liquidationReward);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user to liquidate|
-|`pocketId`|`uint88`|The id of the pocket where the collateral is stored|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
+|`burnAmount`|`uint256`|The amount of TCAP tokens to burn|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`liquidationReward`|`uint256`|The amount of collateral liquidated and returned to the liquidator|
 
 
 ### healthFactor
@@ -249,14 +256,14 @@ Returns the health factor of a user
 
 
 ```solidity
-function healthFactor(address user, uint88 pocketId) external view returns (uint256);
+function healthFactor(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user|
-|`pocketId`|`uint88`|The id of the pocket|
+|`pocketId`|`uint96`|The id of the pocket|
 
 **Returns**
 
@@ -292,14 +299,14 @@ Returns the value of the collateral of a user
 
 
 ```solidity
-function collateralValueOfUser(address user, uint88 pocketId) external view returns (uint256);
+function collateralValueOfUser(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user|
-|`pocketId`|`uint88`|The id of the pocket|
+|`pocketId`|`uint96`|The id of the pocket|
 
 **Returns**
 
@@ -335,14 +342,14 @@ Returns the value of minted TCAP tokens by a user
 
 
 ```solidity
-function mintedValueOfUser(address user, uint88 pocketId) external view returns (uint256);
+function mintedValueOfUser(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user|
-|`pocketId`|`uint88`|The id of the pocket|
+|`pocketId`|`uint96`|The id of the pocket|
 
 **Returns**
 
@@ -357,14 +364,14 @@ Returns the amount of collateral of a user
 
 
 ```solidity
-function collateralOf(address user, uint88 pocketId) external view returns (uint256);
+function collateralOf(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user|
-|`pocketId`|`uint88`|The id of the pocket|
+|`pocketId`|`uint96`|The id of the pocket|
 
 **Returns**
 
@@ -379,14 +386,14 @@ Returns the amount of TCAP tokens minted by a user
 
 
 ```solidity
-function mintedAmountOf(address user, uint88 pocketId) external view returns (uint256);
+function mintedAmountOf(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user|
-|`pocketId`|`uint88`|The id of the pocket|
+|`pocketId`|`uint96`|The id of the pocket|
 
 **Returns**
 
@@ -401,14 +408,14 @@ Returns the outstanding interest of a user denominated in the collateral
 
 
 ```solidity
-function outstandingInterestOf(address user, uint88 pocketId) external view returns (uint256);
+function outstandingInterestOf(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user|
-|`pocketId`|`uint88`|The id of the pocket|
+|`pocketId`|`uint96`|The id of the pocket|
 
 **Returns**
 
@@ -469,17 +476,17 @@ function feeRecipient() external view returns (address);
 |`<none>`|`address`|The fee recipient of the vault|
 
 
-### liquidationThreshold
+### liquidationParams
 
 
 ```solidity
-function liquidationThreshold() external view returns (uint96);
+function liquidationParams() external view returns (LiquidationParams memory);
 ```
 **Returns**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`<none>`|`uint96`|The liquidation threshold of the vault|
+|`<none>`|`LiquidationParams`|The liquidation params of the vault|
 
 
 ### TCAPV2
@@ -512,7 +519,7 @@ function COLLATERAL() external view returns (IERC20);
 
 
 ```solidity
-function pockets(uint88 id) external view returns (IPocket);
+function pockets(uint96 id) external view returns (IPocket);
 ```
 **Returns**
 
@@ -525,7 +532,7 @@ function pockets(uint88 id) external view returns (IPocket);
 
 
 ```solidity
-function pocketEnabled(uint88 id) external view returns (bool);
+function pocketEnabled(uint96 id) external view returns (bool);
 ```
 **Returns**
 
@@ -540,7 +547,7 @@ Emitted when a pocket is added
 
 
 ```solidity
-event PocketAdded(uint88 pocketId, IPocket pocket);
+event PocketAdded(uint96 pocketId, IPocket pocket);
 ```
 
 ### PocketDisabled
@@ -548,7 +555,7 @@ Emitted when a pocket is disabled
 
 
 ```solidity
-event PocketDisabled(uint88 pocketId);
+event PocketDisabled(uint96 pocketId);
 ```
 
 ### InterestRateUpdated
@@ -587,26 +594,26 @@ event FeeRecipientUpdated(address indexed newFeeRecipient);
 |----|----|-----------|
 |`newFeeRecipient`|`address`|The new fee recipient address|
 
-### LiquidationThresholdUpdated
-Emitted when the liquidation threshold is updated
+### LiquidationParamsUpdated
+Emitted when the liquidation params are updated
 
 
 ```solidity
-event LiquidationThresholdUpdated(uint256 newLiquidationThreshold);
+event LiquidationParamsUpdated(LiquidationParams newLiquidationParams);
 ```
 
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`newLiquidationThreshold`|`uint256`|The new liquidation threshold|
+|`newLiquidationParams`|`LiquidationParams`|The new liquidation params|
 
 ### Deposited
 Emitted when a deposit of collateral is made
 
 
 ```solidity
-event Deposited(address indexed user, uint88 indexed pocketId, uint256 collateralAmount, uint256 shares);
+event Deposited(address indexed user, uint96 indexed pocketId, uint256 collateralAmount, uint256 shares);
 ```
 
 **Parameters**
@@ -614,7 +621,7 @@ event Deposited(address indexed user, uint88 indexed pocketId, uint256 collatera
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user who made the deposit|
-|`pocketId`|`uint88`|The id of the pocket the deposit was made to|
+|`pocketId`|`uint96`|The id of the pocket the deposit was made to|
 |`collateralAmount`|`uint256`|The amount of collateral deposited|
 |`shares`|`uint256`|The amount of shares minted by the pocket|
 
@@ -623,7 +630,7 @@ Emitted when a withdrawal of collateral is made
 
 
 ```solidity
-event Withdrawn(address indexed user, uint88 indexed pocketId, address indexed recipient, uint256 amount, uint256 shares);
+event Withdrawn(address indexed user, uint96 indexed pocketId, address indexed recipient, uint256 amount, uint256 shares);
 ```
 
 **Parameters**
@@ -631,7 +638,7 @@ event Withdrawn(address indexed user, uint88 indexed pocketId, address indexed r
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user who made the withdrawal|
-|`pocketId`|`uint88`|The id of the pocket the withdrawal was made from|
+|`pocketId`|`uint96`|The id of the pocket the withdrawal was made from|
 |`recipient`|`address`|The address of the recipient of the withdrawal|
 |`amount`|`uint256`|The amount of collateral withdrawn|
 |`shares`|`uint256`|The amount of shares burned|
@@ -641,7 +648,7 @@ Emitted when TCAP tokens are minted
 
 
 ```solidity
-event Minted(address indexed user, uint88 indexed pocketId, uint256 amount);
+event Minted(address indexed user, uint96 indexed pocketId, uint256 amount);
 ```
 
 **Parameters**
@@ -649,7 +656,7 @@ event Minted(address indexed user, uint88 indexed pocketId, uint256 amount);
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user who minted the tokens|
-|`pocketId`|`uint88`|The id of the pocket where the collateral is stored|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 |`amount`|`uint256`|The amount of TCAP tokens minted|
 
 ### Burned
@@ -657,7 +664,7 @@ Emitted when TCAP tokens are burned
 
 
 ```solidity
-event Burned(address indexed user, uint88 indexed pocketId, uint256 amount);
+event Burned(address indexed user, uint96 indexed pocketId, uint256 amount);
 ```
 
 **Parameters**
@@ -665,7 +672,7 @@ event Burned(address indexed user, uint88 indexed pocketId, uint256 amount);
 |Name|Type|Description|
 |----|----|-----------|
 |`user`|`address`|The address of the user who burned the tokens|
-|`pocketId`|`uint88`|The id of the pocket where the collateral is stored|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 |`amount`|`uint256`|The amount of TCAP tokens burned|
 
 ### Liquidated
@@ -673,7 +680,7 @@ Emitted when a loan of TCAP tokens is liquidated
 
 
 ```solidity
-event Liquidated(address indexed liquidator, address indexed user, uint88 indexed pocketId, uint256 collateralAmount, uint256 mintAmount);
+event Liquidated(address indexed liquidator, address indexed user, uint96 indexed pocketId, uint256 collateralAmount, uint256 mintAmount);
 ```
 
 **Parameters**
@@ -682,7 +689,7 @@ event Liquidated(address indexed liquidator, address indexed user, uint88 indexe
 |----|----|-----------|
 |`liquidator`|`address`|The address of the liquidator|
 |`user`|`address`|The address of the user who was liquidated|
-|`pocketId`|`uint88`|The id of the pocket where the collateral is stored|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 |`collateralAmount`|`uint256`|The amount of collateral liquidated|
 |`mintAmount`|`uint256`|The amount of TCAP tokens liquidated|
 
@@ -692,15 +699,21 @@ Thrown when a user provides an invalid value
 
 
 ```solidity
-error InvalidValue();
+error InvalidValue(ErrorCode code);
 ```
+
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`code`|`ErrorCode`|The identifier of the error|
 
 ### PocketNotEnabled
 Thrown when a user tries to deposit to a pocket that is not enabled
 
 
 ```solidity
-error PocketNotEnabled(uint88 pocketId);
+error PocketNotEnabled(uint96 pocketId);
 ```
 
 ### InvalidToken
@@ -733,5 +746,54 @@ Thrown when a user is liquidated but the loan is still healthy
 
 ```solidity
 error LoanHealthy();
+```
+
+## Structs
+### LiquidationParams
+Liquidation params of the vault
+
+*after liquidation the health factor must be liquidationThreshold + minHealthFactor < x < liquidationThreshold + maxHealthFactor*
+
+*e.g., liquidationThreshold + 10% < x < liquidationThreshold + 30%*
+
+
+```solidity
+struct LiquidationParams {
+    uint64 threshold;
+    uint64 penalty;
+    uint64 minHealthFactor;
+    uint64 maxHealthFactor;
+}
+```
+
+**Properties**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`threshold`|`uint64`|The liquidation threshold|
+|`penalty`|`uint64`|The liquidation penalty|
+|`minHealthFactor`|`uint64`|The minimum health factor after liquidation added to the liquidation threshold|
+|`maxHealthFactor`|`uint64`|The maximum health factor after liquidation added to the liquidation threshold|
+
+## Enums
+### ErrorCode
+
+```solidity
+enum ErrorCode {
+    ZERO_VALUE,
+    INVALID_POCKET,
+    INVALID_POCKET_COLLATERAL,
+    MAX_FEE,
+    MAX_LIQUIDATION_PENALTY,
+    MAX_LIQUIDATION_THRESHOLD,
+    MIN_LIQUIDATION_THRESHOLD,
+    MAX_POST_LIQUIDATION_HEALTH_FACTOR,
+    MIN_POST_LIQUIDATION_HEALTH_FACTOR,
+    INCOMPATIBLE_MAX_POST_LIQUIDATION_HEALTH_FACTOR,
+    INVALID_BURN_AMOUNT,
+    MUST_LIQUIDATE_ENTIRE_POSITION,
+    HEALTH_FACTOR_BELOW_MINIMUM,
+    HEALTH_FACTOR_ABOVE_MAXIMUM
+}
 ```
 

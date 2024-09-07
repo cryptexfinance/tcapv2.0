@@ -13,6 +13,7 @@
   - [❱ lib](src/lib/README.md)
     - [Constants](src/lib/Constants.sol/library.Constants.md)
     - [FeeCalculatorLib](src/lib/FeeCalculatorLib.sol/library.FeeCalculatorLib.md)
+    - [LiquidationLib](src/lib/LiquidationLib.sol/library.LiquidationLib.md)
     - [Multicall](src/lib/Multicall.sol/abstract.Multicall.md)
   - [❱ oracle](src/oracle/README.md)
     - [AggregatedChainlinkOracle](src/oracle/AggregatedChainlinkOracle.sol/contract.AggregatedChainlinkOracle.md)

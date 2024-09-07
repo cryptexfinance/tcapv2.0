@@ -1,5 +1,5 @@
 # BaseOracleUSD
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/34a621b9d7f953a62f8f826356dda361dde059e4/src/oracle/BaseOracleUSD.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/adb271543417436c1309ef4ed99a33410b5ee7ce/src/oracle/BaseOracleUSD.sol)
 
 **Inherits:**
 [IOracle](/src/interface/IOracle.sol/interface.IOracle.md)
@@ -18,7 +18,7 @@ address public immutable asset;
 ### assetDecimals
 
 ```solidity
-uint256 public immutable assetDecimals;
+uint8 public immutable assetDecimals;
 ```
 
 
