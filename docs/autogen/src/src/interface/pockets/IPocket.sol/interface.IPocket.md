@@ -1,5 +1,5 @@
 # IPocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/adb271543417436c1309ef4ed99a33410b5ee7ce/src/interface/pockets/IPocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/interface/pockets/IPocket.sol)
 
 **Inherits:**
 [IVersioned](/src/interface/IVersioned.sol/interface.IVersioned.md)
@@ -91,7 +91,7 @@ function UNDERLYING_TOKEN() external view returns (IERC20);
 
 ### OVERLYING_TOKEN
 
-*the overlying token can be an AAVE aToken (e.g., aWETH), it can also be equal to the underlying token*
+*the overlying token can be an Aave aToken (e.g., aWETH), it can also be equal to the underlying token*
 
 
 ```solidity

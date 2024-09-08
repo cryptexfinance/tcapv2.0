@@ -1,5 +1,5 @@
 # IVault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/adb271543417436c1309ef4ed99a33410b5ee7ce/src/interface/IVault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/interface/IVault.sol)
 
 **Inherits:**
 IAccessControl, [IMulticall](/src/interface/IMulticall.sol/interface.IMulticall.md), [IVersioned](/src/interface/IVersioned.sol/interface.IVersioned.md)
@@ -230,6 +230,8 @@ function burn(uint96 pocketId, uint256 amount) external;
 Liquidates a user's loan
 
 *Throws if the loan is not healthy*
+
+*after the liquidation the health factor must be between the minimum and maximum bounds of the liquidation params*
 
 
 ```solidity
