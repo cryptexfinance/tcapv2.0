@@ -1,10 +1,10 @@
-# IAAVEv3Pocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/adb271543417436c1309ef4ed99a33410b5ee7ce/src/interface/pockets/IAAVEv3Pocket.sol)
+# IAavev3Pocket
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/2f8879d8504dc4ec7a920d1fe0743d765f4412f1/src/interface/pockets/IAAVEv3Pocket.sol)
 
 **Inherits:**
 [IPocket](/src/interface/pockets/IPocket.sol/interface.IPocket.md)
 
-Interface for pockets depositing underlying tokens into AAVE v3
+Interface for pockets depositing underlying tokens into Aave v3
 
 
 ## Functions
@@ -18,6 +18,6 @@ function POOL() external view returns (IPool pool);
 
 |Name|Type|Description|
 |----|----|-----------|
-|`pool`|`IPool`|AAVE v3 Pool|
+|`pool`|`IPool`|Aave v3 Pool|
 
 

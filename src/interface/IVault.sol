@@ -190,6 +190,7 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param burnAmount The amount of TCAP tokens to burn
     /// @return liquidationReward The amount of collateral liquidated and returned to the liquidator
     /// @dev Throws if the loan is not healthy
+    /// @dev after the liquidation the health factor must be between the minimum and maximum bounds of the liquidation params
     function liquidate(address user, uint96 pocketId, uint256 burnAmount) external returns (uint256 liquidationReward);
 
     /// @notice Returns the health factor of a user

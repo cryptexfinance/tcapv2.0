@@ -4,12 +4,12 @@ pragma solidity 0.8.26;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/AAVEv3PocketDeployer.s.sol";
+import "script/deployers/Aavev3PocketDeployer.s.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
 import {IWETH9, IERC20} from "../interface/IWETH9.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-abstract contract Uninitialized is Test, TestHelpers, AAVEv3PocketDeployer {
+abstract contract Uninitialized is Test, TestHelpers, Aavev3PocketDeployer {
     address POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
     IWETH9 underlyingToken = IWETH9(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
     IERC20 overlyingAToken = IERC20(0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8);
@@ -27,7 +27,7 @@ abstract contract Uninitialized is Test, TestHelpers, AAVEv3PocketDeployer {
         }
 
         address vault = makeAddr("vault");
-        aAVEv3Pocket = AAVEv3Pocket(deployAAVEv3PocketImplementation(vault, address(underlyingToken), address(overlyingAToken), POOL_MAINNET));
+        aavev3Pocket = Aavev3Pocket(deployAavev3PocketImplementation(vault, address(underlyingToken), address(overlyingAToken), POOL_MAINNET));
     }
 
     modifier onlyForked() {
@@ -44,7 +44,7 @@ abstract contract Initialized is Uninitialized {
     function setUp() public virtual override {
         super.setUp();
         address admin = address(this);
-        deployAAVEv3PocketTransparent(admin, address(this), address(underlyingToken), address(overlyingAToken), POOL_MAINNET);
+        deployAavev3PocketTransparent(admin, address(this), address(underlyingToken), address(overlyingAToken), POOL_MAINNET);
     }
 }
 
@@ -57,33 +57,33 @@ abstract contract Deposited is Initialized {
             uint256 amount = uint256(keccak256("alice")) % MAX_AMOUNT;
             vm.deal(address(this), amount);
             underlyingToken.deposit{value: amount}();
-            underlyingToken.transfer(address(aAVEv3Pocket), amount);
-            aAVEv3Pocket.registerDeposit(makeAddr("alice"), amount);
+            underlyingToken.transfer(address(aavev3Pocket), amount);
+            aavev3Pocket.registerDeposit(makeAddr("alice"), amount);
         }
     }
 }
 
 contract UninitializedTest is Uninitialized {
     function test_InitialState() public {
-        assertEq(aAVEv3Pocket.totalShares(), 0);
-        assertEq(address(aAVEv3Pocket.VAULT()), makeAddr("vault"));
-        assertEq(address(aAVEv3Pocket.UNDERLYING_TOKEN()), address(underlyingToken));
-        assertEq(address(aAVEv3Pocket.OVERLYING_TOKEN()), address(overlyingAToken));
-        assertEq(address(aAVEv3Pocket.POOL()), POOL_MAINNET);
-        assertEq(aAVEv3Pocket.version(), "1.0.0");
+        assertEq(aavev3Pocket.totalShares(), 0);
+        assertEq(address(aavev3Pocket.VAULT()), makeAddr("vault"));
+        assertEq(address(aavev3Pocket.UNDERLYING_TOKEN()), address(underlyingToken));
+        assertEq(address(aavev3Pocket.OVERLYING_TOKEN()), address(overlyingAToken));
+        assertEq(address(aavev3Pocket.POOL()), POOL_MAINNET);
+        assertEq(aavev3Pocket.version(), "1.0.0");
     }
 
     function test_RevertsOnInitialization() public {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        aAVEv3Pocket.initialize();
+        aavev3Pocket.initialize();
     }
 }
 
 contract InitializedTest is Initialized {
     function test_InitialState() public onlyForked {
-        assertEq(aAVEv3Pocket.totalShares(), 0);
-        assertEq(underlyingToken.balanceOf(address(aAVEv3Pocket)), 0);
-        assertEq(overlyingAToken.balanceOf(address(aAVEv3Pocket)), 0);
+        assertEq(aavev3Pocket.totalShares(), 0);
+        assertEq(underlyingToken.balanceOf(address(aavev3Pocket)), 0);
+        assertEq(overlyingAToken.balanceOf(address(aavev3Pocket)), 0);
     }
 }
 
@@ -93,39 +93,39 @@ contract DepositTest is Initialized {
         address user = makeAddr("alice");
         vm.deal(address(this), amount);
         underlyingToken.deposit{value: amount}();
-        underlyingToken.transfer(address(aAVEv3Pocket), amount);
+        underlyingToken.transfer(address(aavev3Pocket), amount);
         vm.expectEmit(true, true, false, true);
         emit IPocket.Deposit(user, amount, amount, amount);
-        aAVEv3Pocket.registerDeposit(user, amount);
-        assertEq(aAVEv3Pocket.totalShares(), amount);
-        assertEq(aAVEv3Pocket.sharesOf(user), amount);
-        assertApproxEqAbs(aAVEv3Pocket.balanceOf(user), amount, 1);
-        assertApproxEqAbs(aAVEv3Pocket.totalBalance(), amount, 1);
+        aavev3Pocket.registerDeposit(user, amount);
+        assertEq(aavev3Pocket.totalShares(), amount);
+        assertEq(aavev3Pocket.sharesOf(user), amount);
+        assertApproxEqAbs(aavev3Pocket.balanceOf(user), amount, 1);
+        assertApproxEqAbs(aavev3Pocket.totalBalance(), amount, 1);
     }
 }
 
 contract WithdrawTest is Deposited {
     function test_revertIf_withdrawingMoreSharesThanOwned(uint256 shares) public onlyForked {
         address user = makeAddr("alice");
-        shares = bound(shares, aAVEv3Pocket.sharesOf(user) + 1, type(uint128).max - 1);
+        shares = bound(shares, aavev3Pocket.sharesOf(user) + 1, type(uint128).max - 1);
         vm.expectRevert(IPocket.InsufficientFunds.selector);
-        aAVEv3Pocket.withdraw(user, shares, user);
+        aavev3Pocket.withdraw(user, shares, user);
     }
 
     function test_shouldBurnShares(uint256 shares) public onlyForked {
         address user = makeAddr("alice");
         address recipient = makeAddr("recipient");
-        shares = bound(shares, 0, aAVEv3Pocket.sharesOf(user));
-        uint256 totalSharesBefore = aAVEv3Pocket.totalShares();
-        uint256 sharesBefore = aAVEv3Pocket.sharesOf(user);
+        shares = bound(shares, 0, aavev3Pocket.sharesOf(user));
+        uint256 totalSharesBefore = aavev3Pocket.totalShares();
+        uint256 sharesBefore = aavev3Pocket.sharesOf(user);
         uint256 balanceRecipientBefore = underlyingToken.balanceOf(recipient);
-        uint256 balancePocketBefore = overlyingAToken.balanceOf(address(aAVEv3Pocket));
+        uint256 balancePocketBefore = overlyingAToken.balanceOf(address(aavev3Pocket));
         vm.expectEmit(true, true, false, true);
         emit IPocket.Withdrawal(user, recipient, shares, shares, shares);
-        aAVEv3Pocket.withdraw(user, shares, recipient);
-        assertEq(aAVEv3Pocket.totalShares(), totalSharesBefore - shares);
-        assertEq(aAVEv3Pocket.sharesOf(user), sharesBefore - shares);
+        aavev3Pocket.withdraw(user, shares, recipient);
+        assertEq(aavev3Pocket.totalShares(), totalSharesBefore - shares);
+        assertEq(aavev3Pocket.sharesOf(user), sharesBefore - shares);
         assertEq(underlyingToken.balanceOf(recipient), balanceRecipientBefore + shares);
-        assertApproxEqAbs(overlyingAToken.balanceOf(address(aAVEv3Pocket)), balancePocketBefore - shares, 1);
+        assertApproxEqAbs(overlyingAToken.balanceOf(address(aavev3Pocket)), balancePocketBefore - shares, 1);
     }
 }

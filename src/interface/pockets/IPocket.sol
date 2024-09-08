@@ -54,7 +54,7 @@ interface IPocket is IVersioned {
     function UNDERLYING_TOKEN() external view returns (IERC20);
 
     /// @return overlyingToken The overlying token of the pocket
-    /// @dev the overlying token can be an AAVE aToken (e.g., aWETH), it can also be equal to the underlying token
+    /// @dev the overlying token can be an Aave aToken (e.g., aWETH), it can also be equal to the underlying token
     function OVERLYING_TOKEN() external view returns (IERC20);
 
     /// @return totalShares The total amount of shares issued by the pocket

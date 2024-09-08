@@ -3,7 +3,7 @@
 # src
   - [❱ interface](src/interface/README.md)
     - [❱ pockets](src/interface/pockets/README.md)
-      - [IAAVEv3Pocket](src/interface/pockets/IAAVEv3Pocket.sol/interface.IAAVEv3Pocket.md)
+      - [IAavev3Pocket](src/interface/pockets/IAAVEv3Pocket.sol/interface.IAavev3Pocket.md)
       - [IPocket](src/interface/pockets/IPocket.sol/interface.IPocket.md)
     - [IMulticall](src/interface/IMulticall.sol/interface.IMulticall.md)
     - [IOracle](src/interface/IOracle.sol/interface.IOracle.md)
@@ -20,7 +20,7 @@
     - [BaseOracleUSD](src/oracle/BaseOracleUSD.sol/abstract.BaseOracleUSD.md)
     - [TCAPTargetOracle](src/oracle/TCAPTargetOracle.sol/contract.TCAPTargetOracle.md)
   - [❱ pockets](src/pockets/README.md)
-    - [AAVEv3Pocket](src/pockets/AAVEv3Pocket.sol/contract.AAVEv3Pocket.md)
+    - [Aavev3Pocket](src/pockets/AAVEv3Pocket.sol/contract.Aavev3Pocket.md)
     - [BasePocket](src/pockets/BasePocket.sol/contract.BasePocket.md)
   - [TCAPV2](src/TCAPV2.sol/contract.TCAPV2.md)
   - [Vault](src/Vault.sol/contract.Vault.md)
