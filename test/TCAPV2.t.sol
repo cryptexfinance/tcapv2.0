@@ -10,6 +10,8 @@ import {MockFeed} from "./mock/MockFeed.sol";
 import {MockCollateral} from "./mock/MockCollateral.sol";
 import {TCAPTargetOracle} from "../src/oracle/TCAPTargetOracle.sol";
 import {AggregatedChainlinkOracle} from "../src/oracle/AggregatedChainlinkOracle.sol";
+import {TCAPDeployer} from "script/DeployTCAP.s.sol";
+import {AggregatorV3Interface} from "@chainlink/interfaces/feeds/AggregatorV3Interface.sol";
 
 abstract contract Uninitialized is Test, TestHelpers, TCAPV2Deployer {
     function setUp() public virtual {
@@ -120,3 +122,26 @@ contract InitializedTest is Initialized {
         assertEq(tCAPV2.latestPrice(), 3e12 * 1e18 / tCAPV2.DIVISOR());
     }
 }
+
+contract DeployerTest is Test {
+    function test_Deployer() public {
+        address proxyAdminOwner = makeAddr("proxyAdminOwner");
+        address admin = makeAddr("admin");
+        AggregatorV3Interface feed = new MockFeed(3e12 * 1e8);
+        vm.recordLogs();
+        address deployer = address(new TCAPDeployer(proxyAdminOwner, admin, feed));
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        TCAPV2 tcap = TCAPV2(address(uint160(uint256(entries[entries.length - 1].topics[1]))));
+
+        address actualProxyAdminOwner =
+            ProxyAdmin(address(uint160(uint256(vm.load(address(tcap), hex"b53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"))))).owner();
+        assertEq(actualProxyAdminOwner, proxyAdminOwner, "proxyAdminOwner does not match");
+
+        assertFalse(tcap.hasRole(tcap.ORACLE_SETTER_ROLE(), deployer), "deployer should not have oracle setter role");
+        assertFalse(tcap.hasRole(tcap.DEFAULT_ADMIN_ROLE(), deployer), "deployer should not have default admin role");
+        assertTrue(tcap.hasRole(tcap.DEFAULT_ADMIN_ROLE(), admin), "admin should have default admin role");
+    }
+}
+// 0xa85d42cF1874817895f171C917F6eE2cEa73EC20
+// 0x8d2C17FAd02B7bb64139109c6533b7C2b9CADb81
+// emit Deployed(tcap: TransparentUpgradeableProxy: [0x8d2C17FAd02B7bb64139109c6533b7C2b9CADb81], implementation: TCAPV2: [0xffD4505B3452Dc22f8473616d50503bA9E1710Ac])
