@@ -129,7 +129,6 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function updateOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE) {
-        if (IOracle(newOracle).asset() != address(COLLATERAL)) revert IOracle.InvalidOracle();
         _updateOracle(newOracle);
     }
 
@@ -341,6 +340,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     function _updateInterestRate(uint16 fee) internal {
+        if (fee > Constants.MAX_FEE) revert InvalidValue(IVault.ErrorCode.MAX_FEE);
         VaultStorage storage $ = _getVaultStorage();
         $.mintData.setInterestRate(fee);
         emit InterestRateUpdated(fee);
@@ -373,6 +373,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     function _updateOracle(address newOracle) internal {
+        if (IOracle(newOracle).asset() != address(COLLATERAL)) revert IOracle.InvalidOracle();
         VaultStorage storage $ = _getVaultStorage();
         $.oracle = IOracle(newOracle);
         emit OracleUpdated(newOracle);

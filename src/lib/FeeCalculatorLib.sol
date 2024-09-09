@@ -28,7 +28,6 @@ library FeeCalculatorLib {
 
     function setInterestRate(Vault.MintData storage $, uint16 fee) internal {
         updateFeeIndex($);
-        if (fee > Constants.MAX_FEE) revert IVault.InvalidValue(IVault.ErrorCode.MAX_FEE);
         $.feeData.fee = fee;
     }
 
