@@ -142,6 +142,3 @@ contract DeployerTest is Test {
         assertTrue(tcap.hasRole(tcap.DEFAULT_ADMIN_ROLE(), admin), "admin should have default admin role");
     }
 }
-// 0xa85d42cF1874817895f171C917F6eE2cEa73EC20
-// 0x8d2C17FAd02B7bb64139109c6533b7C2b9CADb81
-// emit Deployed(tcap: TransparentUpgradeableProxy: [0x8d2C17FAd02B7bb64139109c6533b7C2b9CADb81], implementation: TCAPV2: [0xffD4505B3452Dc22f8473616d50503bA9E1710Ac])
