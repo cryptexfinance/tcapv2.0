@@ -3,12 +3,15 @@ pragma solidity 0.8.26;
 
 import {IPocket, IVault, IVersioned} from "../interface/pockets/IPocket.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeTransferLib} from "solady/src/utils/SafeTransferLib.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /// @title Base Pocket
 /// @notice The base pocket stores all funds in this contract
 /// @dev assumes the underlying token is the same as the overlying token.
 contract BasePocket is IPocket, Initializable {
+    using SafeTransferLib for address;
+
     /// @custom:storage-location erc7201:tcapv2.pocket.base
     struct BasePocketStorage {
         uint256 totalShares;
@@ -102,7 +105,7 @@ contract BasePocket is IPocket, Initializable {
 
     function _onWithdraw(uint256 amountOverlying, address recipient) internal virtual returns (uint256 amountUnderlying) {
         amountUnderlying = amountOverlying;
-        UNDERLYING_TOKEN.transfer(recipient, amountUnderlying);
+        address(UNDERLYING_TOKEN).safeTransfer(recipient, amountUnderlying);
     }
 
     function _balanceOf(address user) internal view virtual returns (uint256) {
