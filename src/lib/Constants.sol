@@ -8,4 +8,5 @@ library Constants {
     uint64 internal constant MIN_POST_LIQUIDATION_HEALTH_FACTOR = 1;
     uint64 internal constant MAX_POST_LIQUIDATION_HEALTH_FACTOR = 1e18;
     uint256 internal constant MAX_FEE = 10_000; // 100%
+    uint8 internal constant TCAP_DECIMALS = 18;
 }

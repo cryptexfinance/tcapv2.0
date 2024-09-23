@@ -19,7 +19,6 @@ contract BaseOracleUSDTest is Test, TestHelpers, TCAPV2Deployer {
         assertEq(address(oracle.feed()), address(feed));
         assertEq(oracle.feedDecimals(), feed.decimals());
         assertEq(address(oracle.asset()), address(collateral));
-        assertEq(oracle.assetDecimals(), collateral.decimals());
     }
 
     function test_InitializeTCAPTargetOracleCorrectly() public {

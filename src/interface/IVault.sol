@@ -82,20 +82,21 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     event Liquidated(address indexed liquidator, address indexed user, uint96 indexed pocketId, uint256 collateralAmount, uint256 mintAmount);
 
     enum ErrorCode {
-        ZERO_VALUE,
-        INVALID_POCKET,
-        INVALID_POCKET_COLLATERAL,
-        MAX_FEE,
-        MAX_LIQUIDATION_PENALTY,
-        MAX_LIQUIDATION_THRESHOLD,
-        MIN_LIQUIDATION_THRESHOLD,
-        MAX_POST_LIQUIDATION_HEALTH_FACTOR,
-        MIN_POST_LIQUIDATION_HEALTH_FACTOR,
-        INCOMPATIBLE_MAX_POST_LIQUIDATION_HEALTH_FACTOR,
-        INVALID_BURN_AMOUNT,
-        MUST_LIQUIDATE_ENTIRE_POSITION,
-        HEALTH_FACTOR_BELOW_MINIMUM,
-        HEALTH_FACTOR_ABOVE_MAXIMUM
+        ZERO_VALUE, // 0
+        INVALID_POCKET, // 1
+        INVALID_POCKET_COLLATERAL, // 2
+        MAX_FEE, // 3
+        MAX_LIQUIDATION_PENALTY, // 4
+        MAX_LIQUIDATION_THRESHOLD, // 5
+        MIN_LIQUIDATION_THRESHOLD, // 6
+        MAX_POST_LIQUIDATION_HEALTH_FACTOR, // 7
+        MIN_POST_LIQUIDATION_HEALTH_FACTOR, // 8
+        INCOMPATIBLE_MAX_POST_LIQUIDATION_HEALTH_FACTOR, // 9
+        INVALID_BURN_AMOUNT, // 10
+        MUST_LIQUIDATE_ENTIRE_POSITION, // 11
+        HEALTH_FACTOR_BELOW_MINIMUM, // 12
+        HEALTH_FACTOR_ABOVE_MAXIMUM // 13
+
     }
 
     /// @notice Thrown when a user provides an invalid value

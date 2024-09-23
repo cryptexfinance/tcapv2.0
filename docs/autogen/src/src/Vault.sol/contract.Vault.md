@@ -64,6 +64,13 @@ IPermit2 private immutable PERMIT2;
 ```
 
 
+### COLLATERAL_DECIMALS
+
+```solidity
+uint8 private immutable COLLATERAL_DECIMALS;
+```
+
+
 ## Functions
 ### ensureLoanHealthy
 
