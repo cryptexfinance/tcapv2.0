@@ -1,6 +1,6 @@
 /target
 /out
-/cache
+cache
 /coverage
 lcov.info
 .DS_Store

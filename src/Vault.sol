@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {AccessControlUpgradeable as AccessControl} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {Multicall} from "./lib/Multicall.sol";
 import {ITCAPV2, IERC20} from "./interface/ITCAPV2.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IVault, IVersioned} from "./interface/IVault.sol";
 import {IPocket} from "./interface/pockets/IPocket.sol";
 import {FeeCalculatorLib} from "./lib/FeeCalculatorLib.sol";
@@ -67,6 +68,7 @@ contract Vault is IVault, AccessControl, Multicall {
     ITCAPV2 public immutable TCAPV2;
     IERC20 public immutable COLLATERAL;
     IPermit2 private immutable PERMIT2;
+    uint8 private immutable COLLATERAL_DECIMALS;
 
     /// @dev ensures loan is healthy after any action is performed
     modifier ensureLoanHealthy(address user, uint96 pocketId) {
@@ -78,6 +80,7 @@ contract Vault is IVault, AccessControl, Multicall {
         TCAPV2 = tCAPV2_;
         COLLATERAL = collateral_;
         PERMIT2 = permit2_;
+        COLLATERAL_DECIMALS = IERC20Metadata(address(collateral_)).decimals();
         _disableInitializers();
     }
 
@@ -195,12 +198,11 @@ contract Vault is IVault, AccessControl, Multicall {
         uint256 tcapPrice = TCAPV2.latestPrice();
         uint256 collateralAmount = collateralOf(user, pocketId);
         uint256 collateralPrice = latestPrice();
-        uint8 assetDecimals = _getVaultStorage().oracle.assetDecimals();
         IVault.LiquidationParams memory liquidation = liquidationParams();
-        uint256 healthFactor_ = LiquidationLib.healthFactor(mintAmount, tcapPrice, collateralAmount, collateralPrice, assetDecimals);
+        uint256 healthFactor_ = LiquidationLib.healthFactor(mintAmount, tcapPrice, collateralAmount, collateralPrice, COLLATERAL_DECIMALS);
         if (healthFactor_ >= liquidation.threshold) revert LoanHealthy();
 
-        liquidationReward = LiquidationLib.liquidationReward(burnAmount, tcapPrice, collateralPrice, liquidation.penalty);
+        liquidationReward = LiquidationLib.liquidationReward(burnAmount, tcapPrice, collateralPrice, liquidation.penalty, COLLATERAL_DECIMALS);
         if (liquidationReward > collateralAmount) {
             // if mintValue < collateralValue + liquidationPenalty, liquidationReward will be > collateralAmount
             // in this case, we will liquidate the entire collateral
@@ -209,13 +211,7 @@ contract Vault is IVault, AccessControl, Multicall {
             liquidationReward = collateralAmount;
         } else {
             uint256 minBurnAmount = LiquidationLib.tokensRequiredForTargetHealthFactor(
-                liquidation.threshold + liquidation.minHealthFactor,
-                mintAmount,
-                tcapPrice,
-                collateralAmount,
-                collateralPrice,
-                liquidation.penalty,
-                assetDecimals
+                healthFactor_, liquidation.threshold + liquidation.minHealthFactor, mintAmount, liquidation.penalty
             );
 
             // if the minimum burn amount required to reach the minimum health factor is greater than the minted amount, we need to liquidate the entire position
@@ -229,13 +225,7 @@ contract Vault is IVault, AccessControl, Multicall {
             if (
                 burnAmount
                     > LiquidationLib.tokensRequiredForTargetHealthFactor(
-                        liquidation.threshold + liquidation.maxHealthFactor,
-                        mintAmount,
-                        tcapPrice,
-                        collateralAmount,
-                        collateralPrice,
-                        liquidation.penalty,
-                        assetDecimals
+                        healthFactor_, liquidation.threshold + liquidation.maxHealthFactor, mintAmount, liquidation.penalty
                     )
             ) {
                 revert InvalidValue(IVault.ErrorCode.HEALTH_FACTOR_ABOVE_MAXIMUM);
@@ -249,14 +239,13 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function healthFactor(address user, uint96 pocketId) public view returns (uint256) {
-        return LiquidationLib.healthFactor(
-            mintedAmountOf(user, pocketId), TCAPV2.latestPrice(), collateralOf(user, pocketId), latestPrice(), _getVaultStorage().oracle.assetDecimals()
-        );
+        return
+            LiquidationLib.healthFactor(mintedAmountOf(user, pocketId), TCAPV2.latestPrice(), collateralOf(user, pocketId), latestPrice(), COLLATERAL_DECIMALS);
     }
 
     /// @inheritdoc IVault
     function collateralValueOf(uint256 amount) public view returns (uint256) {
-        return amount * latestPrice() / 10 ** _getVaultStorage().oracle.assetDecimals();
+        return amount * latestPrice() / 10 ** COLLATERAL_DECIMALS;
     }
 
     /// @inheritdoc IVault
@@ -289,7 +278,7 @@ contract Vault is IVault, AccessControl, Multicall {
     function outstandingInterestOf(address user, uint96 pocketId) public view returns (uint256) {
         MintData storage $ = _getVaultStorage().mintData;
         uint256 interestAmount = $.interestOf(_toMintId(user, pocketId));
-        return interestAmount * TCAPV2.latestPrice() / latestPrice();
+        return interestAmount * TCAPV2.latestPrice() / latestPrice() * 10 ** COLLATERAL_DECIMALS / 10 ** Constants.TCAP_DECIMALS;
     }
 
     /// @inheritdoc IVault

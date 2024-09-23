@@ -31,6 +31,7 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
     address feeRecipient = makeAddr("feeRecipient");
 
     function setUp() public virtual {
+        /// @dev mock collateral has 8 decimals, therefore adjust mint and deposit amounts by 1e10
         collateral = new MockCollateral();
         permit2 = Deploy.permit2();
         deployTCAPV2Transparent(admin, admin);
@@ -84,7 +85,11 @@ abstract contract PocketSetup is Permitted {
     }
 
     function deposit(address user, uint256 amount) internal returns (uint256) {
-        amount = bound(amount, 0, 1e38 - 1);
+        return deposit(user, amount, 0, 1e38 - 1);
+    }
+
+    function deposit(address user, uint256 amount, uint256 min, uint256 max) internal returns (uint256) {
+        amount = bound(amount, min, max);
         collateral.mint(user, amount);
         vm.prank(user);
         collateral.approve(address(vault), amount);
@@ -429,7 +434,7 @@ contract MintTest is PocketSetup {
     function test_RevertIf_LoanNotHealthyAfterMint(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        deposit(user, bound(amount, 0, mintAmount - 1));
+        deposit(user, bound(amount, 0, (mintAmount - 1) / 1e10));
         vm.prank(user);
         vm.expectRevert(IVault.LoanNotHealthy.selector);
         vault.mint(pocketId, mintAmount);
@@ -439,12 +444,12 @@ contract MintTest is PocketSetup {
 contract WithdrawalTest is PocketSetup {
     function test_RevertIf_LoanNotHealthyAfterWithdrawal(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1);
+        uint256 mintAmount = bound(amount, 1e10, 1e38 - 1);
+        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1) / 1e10 + 1;
         deposit(user, depositAmount);
         vm.prank(user);
         vault.mint(pocketId, mintAmount);
-        uint256 burnAmount = bound(amount, depositAmount - mintAmount + 1, depositAmount);
+        uint256 burnAmount = bound(amount, depositAmount - mintAmount / 1e10 + 1, depositAmount);
         address recipient = makeAddr("recipient");
         vm.expectRevert(IVault.LoanNotHealthy.selector);
         vm.prank(user);
@@ -495,7 +500,7 @@ contract WithdrawalTest is PocketSetup {
         uint256 amount = 100 ether;
         deposit(user, amount);
         vm.prank(user);
-        vault.mint(pocketId, amount / 10);
+        vault.mint(pocketId, amount * 1e10 / 10);
         timestamp = uint32(bound(timestamp, block.timestamp + 1, type(uint32).max));
         vm.warp(timestamp);
         uint256 outstandingInterest = vault.outstandingInterestOf(user, pocketId);
@@ -523,8 +528,9 @@ contract BurnTest is PocketSetup {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 depositAmount = deposit(user, amount);
         vm.prank(user);
-        vault.mint(pocketId, depositAmount);
-        uint256 burnAmount = bound(uint256(keccak256(abi.encode(amount))), 0, depositAmount);
+        uint256 mintAmount = depositAmount * 1e10;
+        vault.mint(pocketId, mintAmount);
+        uint256 burnAmount = bound(uint256(keccak256(abi.encode(amount))), 0, mintAmount);
         vm.expectEmit(true, true, false, true);
         emit IVault.Burned(user, pocketId, burnAmount);
         vm.prank(user);
@@ -559,34 +565,35 @@ contract LiquidationTest is PocketSetup {
     function test_RevertIf_HealthFactorIsBelowMinAfterLiquidation(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 depositAmount = deposit(user, amount);
-        vm.assume(depositAmount > 1e8);
+        vm.assume(depositAmount > 1e4 && depositAmount < 1e20);
         vm.prank(user);
         uint64 penalty = 0.05e18;
-        uint256 mintAmount = depositAmount * 1e18 / (1e18 + penalty);
+        uint256 mintAmount = depositAmount * 1e10 * 1e18 / (1e18 + penalty * 5);
         vault.mint(pocketId, mintAmount);
         vault.updateLiquidationParams(IVault.LiquidationParams({threshold: 1.5e18, penalty: penalty, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18}));
+        uint256 amountLiquidated = mintAmount * 6 / 10;
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.HEALTH_FACTOR_BELOW_MINIMUM));
-        vault.liquidate(user, pocketId, mintAmount / 2);
+        vault.liquidate(user, pocketId, amountLiquidated);
     }
 
     function test_RevertIf_HealthFactorIsAboveMaxAfterLiquidation(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 depositAmount = deposit(user, amount);
-        vm.assume(depositAmount > 1e8 && depositAmount < 1e25);
+        vm.assume(depositAmount > 1e4 && depositAmount < 1e20);
         vm.prank(user);
-        vault.mint(pocketId, depositAmount);
+        uint256 mintAmount = depositAmount * 1e10;
+        vault.mint(pocketId, mintAmount);
         feedTCAP.setMultiplier(9000);
         vault.updateLiquidationParams(IVault.LiquidationParams({threshold: 1.2e18, penalty: 0, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18}));
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.HEALTH_FACTOR_ABOVE_MAXIMUM));
-        vault.liquidate(user, pocketId, depositAmount * 9 / 10);
+        vault.liquidate(user, pocketId, mintAmount * 9 / 10);
     }
 
     function test_ShouldBeAbleToLiquidate(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 depositAmount = deposit(user, amount);
-        vm.assume(depositAmount > 0);
+        uint256 depositAmount = deposit(user, amount, 1, 1e28);
         vm.prank(user);
-        uint256 mintAmount = bound(amount, 1, depositAmount);
+        uint256 mintAmount = bound(amount, 1, depositAmount * 1e10);
         vault.mint(pocketId, mintAmount);
         uint256 collateralValue = vault.collateralValueOfUser(user, pocketId);
         uint256 mintValue = vault.mintedValueOf(mintAmount);

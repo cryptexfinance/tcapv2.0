@@ -1,5 +1,5 @@
 # IOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/interface/IOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/7c3050a56e3f1bad1a100f3e506744d0c71a8807/src/interface/IOracle.sol)
 
 Interface that needs to be implemented by all oracles
 
@@ -32,15 +32,6 @@ function latestPrice() external view returns (uint256);
 |----|----|-----------|
 |`<none>`|`uint256`|the latest price of the asset|
 
-
-### assetDecimals
-
-returns the assets of the underlying asset
-
-
-```solidity
-function assetDecimals() external view returns (uint8);
-```
 
 ## Errors
 ### InvalidOracle

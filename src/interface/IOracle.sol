@@ -13,7 +13,4 @@ interface IOracle {
     /// @return the latest price of the asset
     /// @dev the returned price must have 18 decimals
     function latestPrice() external view returns (uint256);
-
-    /// @notice returns the assets of the underlying asset
-    function assetDecimals() external view returns (uint8);
 }
