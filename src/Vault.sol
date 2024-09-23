@@ -24,7 +24,6 @@ contract Vault is IVault, AccessControl, Multicall {
     struct Deposit {
         address user;
         uint96 pocketId;
-        bool enabled;
         uint256 mintAmount;
         uint256 feeIndex;
         uint256 accruedInterest;
