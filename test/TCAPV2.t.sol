@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/TCAPV2Deployer.s.sol";
+import "../script/deployers/TCAPV2Deployer.s.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {MockFeed} from "./mock/MockFeed.sol";
 import {MockCollateral} from "./mock/MockCollateral.sol";

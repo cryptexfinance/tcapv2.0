@@ -4,8 +4,8 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/TCAPV2Deployer.s.sol";
-import "script/deployers/VaultDeployer.s.sol";
+import "../script/deployers/TCAPV2Deployer.s.sol";
+import "../script/deployers/VaultDeployer.s.sol";
 
 import {MockFeed} from "./mock/MockFeed.sol";
 import {AggregatedChainlinkOracle} from "../src/oracle/AggregatedChainlinkOracle.sol";

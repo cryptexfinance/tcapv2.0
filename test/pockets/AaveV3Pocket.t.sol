@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/AaveV3PocketDeployer.s.sol";
+import "../../script/deployers/AaveV3PocketDeployer.s.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
 import {IWETH9, IERC20} from "../interface/IWETH9.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
