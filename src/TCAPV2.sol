@@ -60,7 +60,6 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
 
     /// @inheritdoc ITCAPV2
     function mintedAmount(address vault) external view returns (uint256) {
-        // TODO: add mint cap?
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         return $._mintedAmounts[vault];
     }

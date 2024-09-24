@@ -321,7 +321,6 @@ contract PocketTest is Permitted {
         vault.disablePocket(pocketId);
     }
 
-    // TODO test that deposits to disabled pocket don't work but withdrawals work
     function test_ShouldDisablePocket() public {
         address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
         vault.addPocket(IPocket(basePocket));
