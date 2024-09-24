@@ -161,7 +161,7 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param permit The permit data
     /// @param signature The signature
     /// @return shares The amount of shares minted by the pocket
-    function depositWithPermit(uint96 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+    function depositWithPermit(uint96 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom calldata permit, bytes calldata signature)
         external
         returns (uint256 shares);
 
