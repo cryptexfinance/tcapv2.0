@@ -160,6 +160,7 @@ contract Vault is IVault, AccessControl, Multicall {
         if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         // @audit should be able to withdraw even if pocket is disabled
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         _takeFee(pocket, msg.sender, pocketId);
         shares = pocket.withdraw(msg.sender, amount, to);
         emit Withdrawn(msg.sender, pocketId, to, amount, shares);
@@ -188,8 +189,9 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function liquidate(address user, uint96 pocketId, uint256 burnAmount) external returns (uint256 liquidationReward) {
         if (burnAmount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
-        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
         // @audit should be able to liquidate even if pocket is disabled
+        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         _takeFee(pocket, user, pocketId);
         uint256 mintAmount = mintedAmountOf(user, pocketId);
         if (burnAmount > mintAmount) revert InvalidValue(IVault.ErrorCode.INVALID_BURN_AMOUNT);
@@ -264,6 +266,7 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function collateralOf(address user, uint96 pocketId) public view returns (uint256) {
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         return pocket.balanceOf(user) - outstandingInterestOf(user, pocketId);
     }
 
