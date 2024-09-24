@@ -8,6 +8,7 @@ import "script/deployers/AaveV3PocketDeployer.s.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
 import {IWETH9, IERC20} from "../interface/IWETH9.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {IPocket} from "../../src/interface/pockets/IPocket.sol";
 
 abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
     address POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
