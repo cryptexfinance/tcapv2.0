@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/ad5b125ba88c9449f030a3c9f06292df66a8a2ca/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -648,8 +648,6 @@ function version() public pure returns (string memory);
 
 ```solidity
 struct Deposit {
-    address user;
-    uint96 pocketId;
     uint256 mintAmount;
     uint256 feeIndex;
     uint256 accruedInterest;

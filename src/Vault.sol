@@ -23,8 +23,6 @@ contract Vault is IVault, AccessControl, Multicall {
     using SafeTransferLib for address;
 
     struct Deposit {
-        address user;
-        uint96 pocketId;
         uint256 mintAmount;
         uint256 feeIndex;
         uint256 accruedInterest;
