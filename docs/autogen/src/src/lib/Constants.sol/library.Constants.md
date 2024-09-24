@@ -1,5 +1,5 @@
 # Constants
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/7c3050a56e3f1bad1a100f3e506744d0c71a8807/src/lib/Constants.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/lib/Constants.sol)
 
 
 ## State Variables
@@ -49,6 +49,13 @@ uint256 internal constant MAX_FEE = 10_000;
 
 ```solidity
 uint8 internal constant TCAP_DECIMALS = 18;
+```
+
+
+### DIVISOR
+
+```solidity
+uint256 internal constant DIVISOR = 1e10;
 ```
 
 

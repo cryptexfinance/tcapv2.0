@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/7c3050a56e3f1bad1a100f3e506744d0c71a8807/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -12,34 +12,6 @@ Vaults manage deposits of collateral and mint TCAP tokens
 
 ```solidity
 bytes32 private constant VaultStorageLocation = 0xead32f79207e43129359e4c6890b619e37e73a4cc1d61050c081a5aea1b4df00;
-```
-
-
-### POCKET_SETTER_ROLE
-
-```solidity
-bytes32 public constant POCKET_SETTER_ROLE = keccak256("POCKET_SETTER_ROLE");
-```
-
-
-### FEE_SETTER_ROLE
-
-```solidity
-bytes32 public constant FEE_SETTER_ROLE = keccak256("FEE_SETTER_ROLE");
-```
-
-
-### ORACLE_SETTER_ROLE
-
-```solidity
-bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
-```
-
-
-### LIQUIDATION_SETTER_ROLE
-
-```solidity
-bytes32 public constant LIQUIDATION_SETTER_ROLE = keccak256("LIQUIDATION_SETTER_ROLE");
 ```
 
 
@@ -112,7 +84,7 @@ Adds a new pocket to the vault
 
 
 ```solidity
-function addPocket(IPocket pocket) external onlyRole(POCKET_SETTER_ROLE) returns (uint96 pocketId);
+function addPocket(IPocket pocket) external onlyRole(Roles.POCKET_SETTER_ROLE) returns (uint96 pocketId);
 ```
 **Parameters**
 
@@ -135,7 +107,7 @@ Disables a pocket to be used for deposits
 
 
 ```solidity
-function disablePocket(uint96 pocketId) external onlyRole(POCKET_SETTER_ROLE);
+function disablePocket(uint96 pocketId) external onlyRole(Roles.POCKET_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -152,7 +124,7 @@ Updates the interest rate of the vault
 
 
 ```solidity
-function updateInterestRate(uint16 fee) external onlyRole(FEE_SETTER_ROLE);
+function updateInterestRate(uint16 fee) external onlyRole(Roles.FEE_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -169,7 +141,7 @@ Updates the fee recipient of the vault
 
 
 ```solidity
-function updateFeeRecipient(address newFeeRecipient) external onlyRole(FEE_SETTER_ROLE);
+function updateFeeRecipient(address newFeeRecipient) external onlyRole(Roles.FEE_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -186,7 +158,7 @@ Updates the oracle of the collateral
 
 
 ```solidity
-function updateOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE);
+function updateOracle(address newOracle) external onlyRole(Roles.ORACLE_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -203,7 +175,7 @@ Updates the liquidation params of the vault
 
 
 ```solidity
-function updateLiquidationParams(LiquidationParams calldata newParams) external onlyRole(LIQUIDATION_SETTER_ROLE);
+function updateLiquidationParams(LiquidationParams calldata newParams) external onlyRole(Roles.LIQUIDATION_SETTER_ROLE);
 ```
 **Parameters**
 

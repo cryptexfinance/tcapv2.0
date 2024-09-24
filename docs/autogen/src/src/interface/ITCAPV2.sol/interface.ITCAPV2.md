@@ -1,5 +1,5 @@
 # ITCAPV2
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/interface/ITCAPV2.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/interface/ITCAPV2.sol)
 
 **Inherits:**
 IERC20, IAccessControl, [IVersioned](/src/interface/IVersioned.sol/interface.IVersioned.md)
@@ -109,19 +109,6 @@ function latestPriceOf(uint256 amount) external view returns (uint256);
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`uint256`|The price of a given amount of TCAP tokens|
-
-
-### DIVISOR
-
-
-```solidity
-function DIVISOR() external view returns (uint256);
-```
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|Value used as divisor with the total market cap, just like the S&P 500 or any major financial index would to define the final tcap token price|
 
 
 ## Events

@@ -12,6 +12,7 @@ import {TCAPTargetOracle} from "../src/oracle/TCAPTargetOracle.sol";
 import {AggregatedChainlinkOracle} from "../src/oracle/AggregatedChainlinkOracle.sol";
 import {TCAPDeployer} from "script/DeployTCAP.s.sol";
 import {AggregatorV3Interface} from "@chainlink/interfaces/feeds/AggregatorV3Interface.sol";
+import {Constants, Roles} from "../src/lib/Constants.sol";
 
 abstract contract Uninitialized is Test, TestHelpers, TCAPV2Deployer {
     function setUp() public virtual {
@@ -25,8 +26,8 @@ abstract contract Initialized is Uninitialized {
     function setUp() public virtual override {
         super.setUp();
         deployTCAPV2Transparent(admin, admin);
-        tCAPV2.grantRole(tCAPV2.ORACLE_SETTER_ROLE(), admin);
-        tCAPV2.grantRole(tCAPV2.VAULT_ROLE(), admin);
+        tCAPV2.grantRole(Roles.ORACLE_SETTER_ROLE, admin);
+        tCAPV2.grantRole(Roles.VAULT_ROLE, admin);
     }
 }
 
@@ -56,10 +57,10 @@ contract InitializedTest is Initialized {
 
     function test_RevertIf_SenderNotVault(address sender) public {
         vm.assume(sender != admin && sender != address(tCAPV2ProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, tCAPV2.VAULT_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.VAULT_ROLE));
         vm.prank(sender);
         tCAPV2.mint(sender, 100);
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, tCAPV2.VAULT_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.VAULT_ROLE));
         vm.prank(sender);
         tCAPV2.burn(sender, 100);
     }
@@ -119,7 +120,7 @@ contract InitializedTest is Initialized {
         tCAPV2.setOracle(address(oracle));
         assertEq(tCAPV2.oracle(), address(oracle));
         // 3T USD * 18 decimals / divisor
-        assertEq(tCAPV2.latestPrice(), 3e12 * 1e18 / tCAPV2.DIVISOR());
+        assertEq(tCAPV2.latestPrice(), 3e12 * 1e18 / Constants.DIVISOR);
     }
 }
 
@@ -137,8 +138,8 @@ contract DeployerTest is Test {
             ProxyAdmin(address(uint160(uint256(vm.load(address(tcap), hex"b53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"))))).owner();
         assertEq(actualProxyAdminOwner, proxyAdminOwner, "proxyAdminOwner does not match");
 
-        assertFalse(tcap.hasRole(tcap.ORACLE_SETTER_ROLE(), deployer), "deployer should not have oracle setter role");
-        assertFalse(tcap.hasRole(tcap.DEFAULT_ADMIN_ROLE(), deployer), "deployer should not have default admin role");
-        assertTrue(tcap.hasRole(tcap.DEFAULT_ADMIN_ROLE(), admin), "admin should have default admin role");
+        assertFalse(tcap.hasRole(Roles.ORACLE_SETTER_ROLE, deployer), "deployer should not have oracle setter role");
+        assertFalse(tcap.hasRole(Roles.DEFAULT_ADMIN_ROLE, deployer), "deployer should not have default admin role");
+        assertTrue(tcap.hasRole(Roles.DEFAULT_ADMIN_ROLE, admin), "admin should have default admin role");
     }
 }

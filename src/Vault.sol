@@ -12,7 +12,7 @@ import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol"
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeTransferLib} from "solady/src/utils/SafeTransferLib.sol";
 import {IOracle} from "./interface/IOracle.sol";
-import {Constants} from "./lib/Constants.sol";
+import {Constants, Roles} from "./lib/Constants.sol";
 import {LiquidationLib} from "./lib/LiquidationLib.sol";
 
 /// @title Vault
@@ -59,11 +59,6 @@ contract Vault is IVault, AccessControl, Multicall {
     // keccak256(abi.encode(uint256(keccak256("tcapv2.storage.vault")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant VaultStorageLocation = 0xead32f79207e43129359e4c6890b619e37e73a4cc1d61050c081a5aea1b4df00;
 
-    bytes32 public constant POCKET_SETTER_ROLE = keccak256("POCKET_SETTER_ROLE");
-    bytes32 public constant FEE_SETTER_ROLE = keccak256("FEE_SETTER_ROLE");
-    bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
-    bytes32 public constant LIQUIDATION_SETTER_ROLE = keccak256("LIQUIDATION_SETTER_ROLE");
-
     ITCAPV2 public immutable TCAPV2;
     IERC20 public immutable COLLATERAL;
     IPermit2 private immutable PERMIT2;
@@ -101,7 +96,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function addPocket(IPocket pocket) external onlyRole(POCKET_SETTER_ROLE) returns (uint96 pocketId) {
+    function addPocket(IPocket pocket) external onlyRole(Roles.POCKET_SETTER_ROLE) returns (uint96 pocketId) {
         if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         if (address(pocket.VAULT()) != address(this)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         if (pocket.UNDERLYING_TOKEN() != COLLATERAL) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET_COLLATERAL);
@@ -112,7 +107,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function disablePocket(uint96 pocketId) external onlyRole(POCKET_SETTER_ROLE) {
+    function disablePocket(uint96 pocketId) external onlyRole(Roles.POCKET_SETTER_ROLE) {
         VaultStorage storage $ = _getVaultStorage();
         if (!$.pockets[pocketId].enabled) revert PocketNotEnabled(pocketId);
         $.pockets[pocketId].enabled = false;
@@ -120,22 +115,22 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function updateInterestRate(uint16 fee) external onlyRole(FEE_SETTER_ROLE) {
+    function updateInterestRate(uint16 fee) external onlyRole(Roles.FEE_SETTER_ROLE) {
         _updateInterestRate(fee);
     }
 
     /// @inheritdoc IVault
-    function updateFeeRecipient(address newFeeRecipient) external onlyRole(FEE_SETTER_ROLE) {
+    function updateFeeRecipient(address newFeeRecipient) external onlyRole(Roles.FEE_SETTER_ROLE) {
         _updateFeeRecipient(newFeeRecipient);
     }
 
     /// @inheritdoc IVault
-    function updateOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE) {
+    function updateOracle(address newOracle) external onlyRole(Roles.ORACLE_SETTER_ROLE) {
         _updateOracle(newOracle);
     }
 
     /// @inheritdoc IVault
-    function updateLiquidationParams(LiquidationParams calldata newParams) external onlyRole(LIQUIDATION_SETTER_ROLE) {
+    function updateLiquidationParams(LiquidationParams calldata newParams) external onlyRole(Roles.LIQUIDATION_SETTER_ROLE) {
         _updateLiquidationParams(newParams);
     }
 

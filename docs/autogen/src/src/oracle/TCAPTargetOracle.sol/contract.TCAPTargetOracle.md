@@ -1,18 +1,10 @@
 # TCAPTargetOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6715a13c6e4abbc7ab93ee610fd231d4c1654bde/src/oracle/TCAPTargetOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/oracle/TCAPTargetOracle.sol)
 
 **Inherits:**
 [AggregatedChainlinkOracle](/src/oracle/AggregatedChainlinkOracle.sol/contract.AggregatedChainlinkOracle.md)
 
 *Returns the target price of the TCAP token*
-
-
-## State Variables
-### DIVISOR
-
-```solidity
-uint256 private immutable DIVISOR;
-```
 
 
 ## Functions

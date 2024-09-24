@@ -15,7 +15,7 @@ import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol"
 import {Deploy} from "./util/Deploy.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {BasePocket} from "../src/pockets/BasePocket.sol";
-import {Constants} from "../src/lib/Constants.sol";
+import {Constants, Roles} from "../src/lib/Constants.sol";
 
 abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deployer {
     MockCollateral collateral;
@@ -35,10 +35,10 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
         collateral = new MockCollateral();
         permit2 = Deploy.permit2();
         deployTCAPV2Transparent(admin, admin);
-        tCAPV2.grantRole(tCAPV2.ORACLE_SETTER_ROLE(), admin);
-        tCAPV2.grantRole(tCAPV2.VAULT_ROLE(), admin);
+        tCAPV2.grantRole(Roles.ORACLE_SETTER_ROLE, admin);
+        tCAPV2.grantRole(Roles.VAULT_ROLE, admin);
         uint256 collateralPrice = 1000;
-        feedTCAP = new MockFeed(collateralPrice * tCAPV2.DIVISOR() * 1e8);
+        feedTCAP = new MockFeed(collateralPrice * Constants.DIVISOR * 1e8);
         oracleTCAP = new TCAPTargetOracle(tCAPV2, address(feedTCAP));
         tCAPV2.setOracle(address(oracleTCAP));
 
@@ -64,11 +64,11 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
 abstract contract Permitted is Initialized {
     function setUp() public virtual override {
         super.setUp();
-        tCAPV2.grantRole(tCAPV2.VAULT_ROLE(), address(vault));
-        vault.grantRole(vault.POCKET_SETTER_ROLE(), admin);
-        vault.grantRole(vault.FEE_SETTER_ROLE(), admin);
-        vault.grantRole(vault.ORACLE_SETTER_ROLE(), admin);
-        vault.grantRole(vault.LIQUIDATION_SETTER_ROLE(), admin);
+        tCAPV2.grantRole(Roles.VAULT_ROLE, address(vault));
+        vault.grantRole(Roles.POCKET_SETTER_ROLE, admin);
+        vault.grantRole(Roles.FEE_SETTER_ROLE, admin);
+        vault.grantRole(Roles.ORACLE_SETTER_ROLE, admin);
+        vault.grantRole(Roles.LIQUIDATION_SETTER_ROLE, admin);
     }
 }
 
@@ -146,27 +146,27 @@ contract PermissionsTest is Initialized {
 
     function test_RevertIf_InvalidPermission_PocketSetter(address sender) public {
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.POCKET_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.POCKET_SETTER_ROLE));
         vm.prank(sender);
         vault.addPocket(IPocket(makeAddr("pocket")));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.POCKET_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.POCKET_SETTER_ROLE));
         vm.prank(sender);
         vault.disablePocket(0);
     }
 
     function test_RevertIf_InvalidPermission_FeeSetter(address sender) public {
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.FEE_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.FEE_SETTER_ROLE));
         vm.prank(sender);
         vault.updateInterestRate(0);
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.FEE_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.FEE_SETTER_ROLE));
         vm.prank(sender);
         vault.updateFeeRecipient(feeRecipient);
     }
 
     function test_RevertIf_InvalidPermission_OracleSetter(address sender) public {
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.ORACLE_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.ORACLE_SETTER_ROLE));
         vm.prank(sender);
         vault.updateOracle(address(0));
     }
@@ -175,7 +175,7 @@ contract PermissionsTest is Initialized {
         IVault.LiquidationParams memory liquidationParams =
             IVault.LiquidationParams({threshold: 1.5e18, penalty: 0.05e18, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18});
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.LIQUIDATION_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.LIQUIDATION_SETTER_ROLE));
         vm.prank(sender);
         vault.updateLiquidationParams(liquidationParams);
     }
