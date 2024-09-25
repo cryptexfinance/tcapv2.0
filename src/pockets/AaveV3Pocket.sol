@@ -21,7 +21,7 @@ contract AaveV3Pocket is BasePocket, IAaveV3Pocket {
 
     /// @dev deposits underlying token into Aave v3, aTokens are deposited into this pocket
     function _onDeposit(uint256 amountUnderlying) internal override returns (uint256 amountOverlying) {
-        POOL.deposit(address(UNDERLYING_TOKEN), amountUnderlying, address(this), 0);
+        POOL.supply(address(UNDERLYING_TOKEN), amountUnderlying, address(this), 0);
         return amountUnderlying;
     }
 
