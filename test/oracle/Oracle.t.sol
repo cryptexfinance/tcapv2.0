@@ -9,7 +9,7 @@ import {AggregatedChainlinkOracle} from "../../src/oracle/AggregatedChainlinkOra
 import {TCAPTargetOracle} from "../../src/oracle/TCAPTargetOracle.sol";
 import {MockFeed} from "../mock/MockFeed.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
-import "script/deployers/TCAPV2Deployer.s.sol";
+import "../../script/deployers/TCAPV2Deployer.s.sol";
 import {Constants} from "../../src/lib/Constants.sol";
 
 contract BaseOracleUSDTest is Test, TestHelpers, TCAPV2Deployer {

@@ -23,8 +23,6 @@ contract Vault is IVault, AccessControl, Multicall {
     using SafeTransferLib for address;
 
     struct Deposit {
-        address user;
-        uint96 pocketId;
         uint256 mintAmount;
         uint256 feeIndex;
         uint256 accruedInterest;
@@ -136,6 +134,7 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function deposit(uint96 pocketId, uint256 amount) external returns (uint256 shares) {
+        if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         IPocket pocket = _getPocket(pocketId);
         address(COLLATERAL).safeTransferFrom(msg.sender, address(pocket), amount);
         shares = pocket.registerDeposit(msg.sender, amount);
@@ -147,6 +146,7 @@ contract Vault is IVault, AccessControl, Multicall {
         external
         returns (uint256 shares)
     {
+        if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         if (permit.permitted.token != address(COLLATERAL)) revert InvalidToken();
         IPocket pocket = _getPocket(pocketId);
         IPermit2.SignatureTransferDetails memory transferDetails = ISignatureTransfer.SignatureTransferDetails({to: address(pocket), requestedAmount: amount});
@@ -157,8 +157,10 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function withdraw(uint96 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId) returns (uint256 shares) {
+        if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         // @audit should be able to withdraw even if pocket is disabled
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         _takeFee(pocket, msg.sender, pocketId);
         shares = pocket.withdraw(msg.sender, amount, to);
         emit Withdrawn(msg.sender, pocketId, to, amount, shares);
@@ -166,6 +168,7 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function mint(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId) {
+        if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         MintData storage $ = _getVaultStorage().mintData;
         $.modifyPosition(_toMintId(msg.sender, pocketId), amount.toInt256());
         TCAPV2.mint(msg.sender, amount);
@@ -174,6 +177,7 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function burn(uint96 pocketId, uint256 amount) external {
+        if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         MintData storage $ = _getVaultStorage().mintData;
         uint256 mintId = _toMintId(msg.sender, pocketId);
         if ($.deposits[mintId].mintAmount < amount) revert InsufficientMintedAmount();
@@ -184,8 +188,10 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function liquidate(address user, uint96 pocketId, uint256 burnAmount) external returns (uint256 liquidationReward) {
-        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (burnAmount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         // @audit should be able to liquidate even if pocket is disabled
+        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         _takeFee(pocket, user, pocketId);
         uint256 mintAmount = mintedAmountOf(user, pocketId);
         if (burnAmount > mintAmount) revert InvalidValue(IVault.ErrorCode.INVALID_BURN_AMOUNT);
@@ -260,6 +266,7 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function collateralOf(address user, uint96 pocketId) public view returns (uint256) {
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         return pocket.balanceOf(user) - outstandingInterestOf(user, pocketId);
     }
 

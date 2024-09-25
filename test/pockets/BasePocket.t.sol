@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/BasePocketDeployer.s.sol";
+import "../../script/deployers/BasePocketDeployer.s.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
 
 abstract contract Uninitialized is Test, TestHelpers, BasePocketDeployer {
