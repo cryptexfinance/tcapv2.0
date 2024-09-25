@@ -238,6 +238,18 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
+    function takeFee(address user, uint96 pocketId) external {
+        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
+        _takeFee(pocket, user, pocketId);
+    }
+
+    /// @inheritdoc IVault
+    function collateralValueOfUser(address user, uint96 pocketId) external view returns (uint256) {
+        return collateralValueOf(collateralOf(user, pocketId));
+    }
+
+    /// @inheritdoc IVault
     function healthFactor(address user, uint96 pocketId) public view returns (uint256) {
         return
             LiquidationLib.healthFactor(mintedAmountOf(user, pocketId), TCAPV2.latestPrice(), collateralOf(user, pocketId), latestPrice(), COLLATERAL_DECIMALS);
@@ -246,11 +258,6 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function collateralValueOf(uint256 amount) public view returns (uint256) {
         return amount * latestPrice() / 10 ** COLLATERAL_DECIMALS;
-    }
-
-    /// @inheritdoc IVault
-    function collateralValueOfUser(address user, uint96 pocketId) public view returns (uint256) {
-        return collateralValueOf(collateralOf(user, pocketId));
     }
 
     /// @inheritdoc IVault
@@ -265,9 +272,10 @@ contract Vault is IVault, AccessControl, Multicall {
 
     /// @inheritdoc IVault
     function collateralOf(address user, uint96 pocketId) public view returns (uint256) {
-        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
-        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
-        return pocket.balanceOf(user) - outstandingInterestOf(user, pocketId);
+        uint256 balance = _balanceOf(user, pocketId);
+        uint256 interest = outstandingInterestOf(user, pocketId);
+        if (interest > balance) return 0;
+        return balance - interest;
     }
 
     /// @inheritdoc IVault
@@ -319,14 +327,15 @@ contract Vault is IVault, AccessControl, Multicall {
 
     function _takeFee(IPocket pocket, address user, uint96 pocketId) internal {
         uint256 interest = outstandingInterestOf(user, pocketId);
-        uint256 collateral = collateralOf(user, pocketId);
+        uint256 collateral = _balanceOf(user, pocketId);
         if (interest > collateral) interest = collateral;
         VaultStorage storage $ = _getVaultStorage();
         address feeRecipient_ = $.feeRecipient;
         if (interest != 0 && feeRecipient_ != address(0)) {
             pocket.withdraw(user, interest, feeRecipient_);
+            $.mintData.resetInterestOf(_toMintId(user, pocketId));
+            emit FeeCollected(user, pocketId, feeRecipient_, interest);
         }
-        $.mintData.resetInterestOf(_toMintId(user, pocketId));
     }
 
     function _updateInterestRate(uint16 fee) internal {
@@ -375,12 +384,18 @@ contract Vault is IVault, AccessControl, Multicall {
         return p.pocket;
     }
 
+    function _balanceOf(address user, uint96 pocketId) internal view returns (uint256) {
+        IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
+        if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
+        return pocket.balanceOf(user);
+    }
+
     function _toMintId(address user, uint96 pocketId) internal pure returns (uint256) {
         return uint256(keccak256(abi.encode(user, pocketId)));
     }
 
     /// @inheritdoc IVersioned
-    function version() public pure returns (string memory) {
+    function version() external pure returns (string memory) {
         return "1.0.0";
     }
 }

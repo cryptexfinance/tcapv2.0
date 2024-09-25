@@ -1,5 +1,5 @@
 # IVault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/3fb7671f959cafc2399d81b93557d37c7898477b/src/interface/IVault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/c8b18bb160f52905d87ef82a6a1c3fee16403c7f/src/interface/IVault.sol)
 
 **Inherits:**
 IAccessControl, [IMulticall](/src/interface/IMulticall.sol/interface.IMulticall.md), [IVersioned](/src/interface/IVersioned.sol/interface.IVersioned.md)
@@ -250,6 +250,22 @@ function liquidate(address user, uint96 pocketId, uint256 burnAmount) external r
 |Name|Type|Description|
 |----|----|-----------|
 |`liquidationReward`|`uint256`|The amount of collateral liquidated and returned to the liquidator|
+
+
+### takeFee
+
+Takes the accrued fees from a user and sends them to the fee recipient
+
+
+```solidity
+function takeFee(address user, uint96 pocketId) external;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user to take the fees from|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 
 
 ### healthFactor
@@ -694,6 +710,23 @@ event Liquidated(address indexed liquidator, address indexed user, uint96 indexe
 |`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 |`collateralAmount`|`uint256`|The amount of collateral liquidated|
 |`mintAmount`|`uint256`|The amount of TCAP tokens liquidated|
+
+### FeeCollected
+Emitted when a fee is collected from a user
+
+
+```solidity
+event FeeCollected(address indexed user, uint96 indexed pocketId, address indexed feeRecipient, uint256 amount);
+```
+
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user who paid the fee|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
+|`feeRecipient`|`address`|The address of the fee recipient|
+|`amount`|`uint256`|The amount of fee collected|
 
 ## Errors
 ### InvalidValue

@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/c6e2e51d5b945da0fd53c54be302f1db634bd9a7/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/c8b18bb160f52905d87ef82a6a1c3fee16403c7f/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -316,6 +316,44 @@ function liquidate(address user, uint96 pocketId, uint256 burnAmount) external r
 |`liquidationReward`|`uint256`|The amount of collateral liquidated and returned to the liquidator|
 
 
+### takeFee
+
+Takes the accrued fees from a user and sends them to the fee recipient
+
+
+```solidity
+function takeFee(address user, uint96 pocketId) external;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user to take the fees from|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
+
+
+### collateralValueOfUser
+
+Returns the value of the collateral of a user
+
+
+```solidity
+function collateralValueOfUser(address user, uint96 pocketId) external view returns (uint256);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user|
+|`pocketId`|`uint96`|The id of the pocket|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|The value of the collateral of the user|
+
+
 ### healthFactor
 
 Returns the health factor of a user
@@ -357,28 +395,6 @@ function collateralValueOf(uint256 amount) public view returns (uint256);
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`uint256`|The value of the collateral|
-
-
-### collateralValueOfUser
-
-Returns the value of the collateral of a user
-
-
-```solidity
-function collateralValueOfUser(address user, uint96 pocketId) public view returns (uint256);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`user`|`address`|The address of the user|
-|`pocketId`|`uint96`|The id of the pocket|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|The value of the collateral of the user|
 
 
 ### mintedValueOf
@@ -623,6 +639,13 @@ function _updateOracle(address newOracle) internal;
 function _getPocket(uint96 pocketId) internal view returns (IPocket);
 ```
 
+### _balanceOf
+
+
+```solidity
+function _balanceOf(address user, uint96 pocketId) internal view returns (uint256);
+```
+
 ### _toMintId
 
 
@@ -634,7 +657,7 @@ function _toMintId(address user, uint96 pocketId) internal pure returns (uint256
 
 
 ```solidity
-function version() public pure returns (string memory);
+function version() external pure returns (string memory);
 ```
 **Returns**
 
