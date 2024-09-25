@@ -110,11 +110,11 @@ contract BasePocket is IPocket, Initializable {
     function _balanceOf(address user) internal view virtual returns (uint256) {
         uint256 totalShares_ = totalShares();
         if (totalShares_ == 0) return 0;
-        return sharesOf(user) * UNDERLYING_TOKEN.balanceOf(address(this)) / totalShares_;
+        return sharesOf(user) * OVERLYING_TOKEN.balanceOf(address(this)) / totalShares_;
     }
 
     function _totalBalance() internal view virtual returns (uint256) {
-        return UNDERLYING_TOKEN.balanceOf(address(this));
+        return OVERLYING_TOKEN.balanceOf(address(this));
     }
 
     /// @inheritdoc IVersioned
