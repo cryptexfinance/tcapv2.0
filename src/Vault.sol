@@ -181,7 +181,7 @@ contract Vault is IVault, AccessControl, Multicall {
         MintData storage $ = _getVaultStorage().mintData;
         uint256 mintId = _toMintId(msg.sender, pocketId);
         if ($.deposits[mintId].mintAmount < amount) revert InsufficientMintedAmount();
-        $.modifyPosition(mintId, -amount.toInt256());
+        $.modifyPosition(mintId, -1 * (amount.toInt256()));
         TCAPV2.burn(msg.sender, amount);
         emit Burned(msg.sender, pocketId, amount);
     }
@@ -233,6 +233,7 @@ contract Vault is IVault, AccessControl, Multicall {
         }
 
         pocket.withdraw(user, liquidationReward, msg.sender);
+        _getVaultStorage().mintData.modifyPosition(_toMintId(user, pocketId), -1 * (burnAmount.toInt256()));
         TCAPV2.burn(msg.sender, burnAmount);
         emit Liquidated(msg.sender, user, pocketId, liquidationReward, burnAmount);
     }
