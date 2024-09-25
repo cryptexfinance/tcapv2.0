@@ -11,8 +11,11 @@ import {IAaveV3Pocket} from "../interface/pockets/IAaveV3Pocket.sol";
 contract AaveV3Pocket is BasePocket, IAaveV3Pocket {
     IPool public immutable POOL;
 
-    constructor(address vault_, address underlyingToken_, address overlyingToken_, address aavePool) BasePocket(vault_, underlyingToken_, overlyingToken_) {
+    constructor(address vault_, address underlyingToken_, address aavePool)
+        BasePocket(vault_, underlyingToken_, IPool(aavePool).getReserveData(underlyingToken_).aTokenAddress)
+    {
         POOL = IPool(aavePool);
+        require(address(OVERLYING_TOKEN) != address(0));
     }
 
     function initialize() public override initializer {
