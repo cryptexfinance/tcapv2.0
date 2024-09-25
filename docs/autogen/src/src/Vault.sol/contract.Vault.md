@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/ad5b125ba88c9449f030a3c9f06292df66a8a2ca/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/c6e2e51d5b945da0fd53c54be302f1db634bd9a7/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -212,7 +212,7 @@ Deposits collateral into a pocket using a permit2 signature transfer
 
 
 ```solidity
-function depositWithPermit(uint96 pocketId, uint256 amount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+function depositWithPermit(uint96 pocketId, uint256 amount, IPermit2.PermitTransferFrom calldata permit, bytes calldata signature)
     external
     returns (uint256 shares);
 ```

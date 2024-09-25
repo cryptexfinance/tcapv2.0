@@ -1,5 +1,5 @@
 # BasePocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/pockets/BasePocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/495451d159fb10c010b98bdc7bc685a1a59dc8d3/src/pockets/BasePocket.sol)
 
 **Inherits:**
 [IPocket](/src/interface/pockets/IPocket.sol/interface.IPocket.md), Initializable
@@ -50,7 +50,7 @@ constructor(address vault_, address underlyingToken_, address overlyingToken_);
 
 
 ```solidity
-function initialize() public initializer;
+function initialize() public virtual initializer;
 ```
 
 ### _getBasePocketStorage

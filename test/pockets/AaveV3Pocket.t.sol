@@ -44,8 +44,10 @@ abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
 abstract contract Initialized is Uninitialized {
     function setUp() public virtual override {
         super.setUp();
-        address admin = address(this);
-        deployAaveV3PocketTransparent(admin, address(this), address(underlyingToken), address(overlyingAToken), POOL_MAINNET);
+        if (forked) {
+            address admin = address(this);
+            deployAaveV3PocketTransparent(admin, address(this), address(underlyingToken), address(overlyingAToken), POOL_MAINNET);
+        }
     }
 }
 

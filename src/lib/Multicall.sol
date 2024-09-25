@@ -14,7 +14,7 @@ abstract contract Multicall is IMulticall {
 
             if (!success) {
                 // bubble up the revert reason
-                assembly {
+                assembly ("memory-safe") {
                     revert(add(result, 0x20), mload(result))
                 }
             }

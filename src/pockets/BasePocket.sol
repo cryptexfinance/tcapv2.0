@@ -32,7 +32,7 @@ contract BasePocket is IPocket, Initializable {
         _disableInitializers();
     }
 
-    function initialize() public initializer {}
+    function initialize() public virtual initializer {}
 
     function _getBasePocketStorage() private pure returns (BasePocketStorage storage $) {
         assembly {
