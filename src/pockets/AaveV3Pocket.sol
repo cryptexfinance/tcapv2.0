@@ -33,7 +33,9 @@ contract AaveV3Pocket is BasePocket, IAaveV3Pocket {
     }
 
     function _balanceOf(address user) internal view override returns (uint256) {
-        return sharesOf(user) * OVERLYING_TOKEN.balanceOf(address(this)) / totalShares();
+        uint256 totalShares_ = totalShares();
+        if (totalShares_ == 0) return 0;
+        return sharesOf(user) * OVERLYING_TOKEN.balanceOf(address(this)) / totalShares_;
     }
 
     function _totalBalance() internal view override returns (uint256) {
