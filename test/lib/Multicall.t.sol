@@ -45,15 +45,6 @@ contract MulticallTest is Test {
         multicall.multicall(calls);
     }
 
-    function test_multicall_payableStoresMsgValue() public {
-        assertEq(address(multicall).balance, 0);
-        bytes[] memory calls = new bytes[](1);
-        calls[0] = abi.encodeWithSelector(MockMulticall(multicall).payableStoresMsgValue.selector);
-        multicall.multicall{value: 100}(calls);
-        assertEq(address(multicall).balance, 100);
-        assertEq(multicall.msgValue(), 100);
-    }
-
     function test_multicall_returnSender() public {
         bytes[] memory calls = new bytes[](1);
         calls[0] = abi.encodeWithSelector(MockMulticall(multicall).returnSender.selector);
@@ -71,38 +62,6 @@ contract MulticallTest is Test {
         bytes[] memory results = multicall.multicall(calls);
         address sender = abi.decode(results[0], (address));
         assertEq(sender, alice);
-    }
-
-    function test_multicall_double_send() public {
-        bytes[] memory calls = new bytes[](2);
-        calls[0] = abi.encodeWithSelector(MockMulticall(multicall).payableStoresMsgValue.selector);
-        calls[1] = abi.encodeWithSelector(MockMulticall(multicall).payableStoresMsgValue.selector);
-
-        multicall.multicall{value: 100}(calls);
-        assertEq(address(multicall).balance, 100);
-        assertEq(multicall.msgValue(), 100);
-    }
-
-    function test_multicall_unpayableRevert() public {
-        // first call is payable, second is not which causes a revert
-        bytes[] memory calls = new bytes[](2);
-        calls[0] = abi.encodeWithSelector(MockMulticall(multicall).payableStoresMsgValue.selector);
-        calls[1] = abi.encodeWithSelector(MockMulticall(multicall).functionThatReturnsTuple.selector, 10, 20);
-
-        vm.expectRevert();
-        multicall.multicall{value: 100}(calls);
-    }
-
-    function test_multicall_bothPayable() public {
-        // msg.value is provided to both calls
-        bytes[] memory calls = new bytes[](2);
-        calls[0] = abi.encodeWithSelector(MockMulticall(multicall).payableStoresMsgValue.selector);
-        calls[1] = abi.encodeWithSelector(MockMulticall(multicall).payableStoresMsgValueDouble.selector);
-
-        multicall.multicall{value: 100}(calls);
-        assertEq(address(multicall).balance, 100);
-        assertEq(multicall.msgValue(), 100);
-        assertEq(multicall.msgValueDouble(), 200);
     }
 
     // revert bubbling

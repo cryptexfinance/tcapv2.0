@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/605ffb93649434046242e490c51a2f49dc4a7da9/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/3ef6bd16edededb3779ffafd1e769c1b67e04d32/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -332,6 +332,28 @@ function takeFee(address user, uint96 pocketId) external;
 |`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
 
 
+### collateralValueOfUser
+
+Returns the value of the collateral of a user
+
+
+```solidity
+function collateralValueOfUser(address user, uint96 pocketId) external view returns (uint256);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user|
+|`pocketId`|`uint96`|The id of the pocket|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|The value of the collateral of the user|
+
+
 ### healthFactor
 
 Returns the health factor of a user
@@ -373,28 +395,6 @@ function collateralValueOf(uint256 amount) public view returns (uint256);
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`uint256`|The value of the collateral|
-
-
-### collateralValueOfUser
-
-Returns the value of the collateral of a user
-
-
-```solidity
-function collateralValueOfUser(address user, uint96 pocketId) public view returns (uint256);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`user`|`address`|The address of the user|
-|`pocketId`|`uint96`|The id of the pocket|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|The value of the collateral of the user|
 
 
 ### mintedValueOf
@@ -657,7 +657,7 @@ function _toMintId(address user, uint96 pocketId) internal pure returns (uint256
 
 
 ```solidity
-function version() public pure returns (string memory);
+function version() external pure returns (string memory);
 ```
 **Returns**
 

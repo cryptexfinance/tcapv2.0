@@ -245,6 +245,11 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
+    function collateralValueOfUser(address user, uint96 pocketId) external view returns (uint256) {
+        return collateralValueOf(collateralOf(user, pocketId));
+    }
+
+    /// @inheritdoc IVault
     function healthFactor(address user, uint96 pocketId) public view returns (uint256) {
         return
             LiquidationLib.healthFactor(mintedAmountOf(user, pocketId), TCAPV2.latestPrice(), collateralOf(user, pocketId), latestPrice(), COLLATERAL_DECIMALS);
@@ -253,11 +258,6 @@ contract Vault is IVault, AccessControl, Multicall {
     /// @inheritdoc IVault
     function collateralValueOf(uint256 amount) public view returns (uint256) {
         return amount * latestPrice() / 10 ** COLLATERAL_DECIMALS;
-    }
-
-    /// @inheritdoc IVault
-    function collateralValueOfUser(address user, uint96 pocketId) public view returns (uint256) {
-        return collateralValueOf(collateralOf(user, pocketId));
     }
 
     /// @inheritdoc IVault
@@ -395,7 +395,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVersioned
-    function version() public pure returns (string memory) {
+    function version() external pure returns (string memory) {
         return "1.0.0";
     }
 }
