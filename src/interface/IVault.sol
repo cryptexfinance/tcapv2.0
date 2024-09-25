@@ -81,6 +81,13 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param mintAmount The amount of TCAP tokens liquidated
     event Liquidated(address indexed liquidator, address indexed user, uint96 indexed pocketId, uint256 collateralAmount, uint256 mintAmount);
 
+    /// @notice Emitted when a fee is collected from a user
+    /// @param user The address of the user who paid the fee
+    /// @param pocketId The id of the pocket where the collateral is stored
+    /// @param feeRecipient The address of the fee recipient
+    /// @param amount The amount of fee collected
+    event FeeCollected(address indexed user, uint96 indexed pocketId, address indexed feeRecipient, uint256 amount);
+
     enum ErrorCode {
         ZERO_VALUE, // 0
         INVALID_POCKET, // 1
@@ -193,6 +200,11 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @dev Throws if the loan is not healthy
     /// @dev after the liquidation the health factor must be between the minimum and maximum bounds of the liquidation params
     function liquidate(address user, uint96 pocketId, uint256 burnAmount) external returns (uint256 liquidationReward);
+
+    /// @notice Takes the accrued fees from a user and sends them to the fee recipient
+    /// @param user The address of the user to take the fees from
+    /// @param pocketId The id of the pocket where the collateral is stored
+    function takeFee(address user, uint96 pocketId) external;
 
     /// @notice Returns the health factor of a user
     /// @param user The address of the user

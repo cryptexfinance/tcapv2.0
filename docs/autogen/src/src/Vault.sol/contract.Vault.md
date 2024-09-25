@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/c6e2e51d5b945da0fd53c54be302f1db634bd9a7/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/605ffb93649434046242e490c51a2f49dc4a7da9/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -316,6 +316,22 @@ function liquidate(address user, uint96 pocketId, uint256 burnAmount) external r
 |`liquidationReward`|`uint256`|The amount of collateral liquidated and returned to the liquidator|
 
 
+### takeFee
+
+Takes the accrued fees from a user and sends them to the fee recipient
+
+
+```solidity
+function takeFee(address user, uint96 pocketId) external;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user to take the fees from|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
+
+
 ### healthFactor
 
 Returns the health factor of a user
@@ -621,6 +637,13 @@ function _updateOracle(address newOracle) internal;
 
 ```solidity
 function _getPocket(uint96 pocketId) internal view returns (IPocket);
+```
+
+### _balanceOf
+
+
+```solidity
+function _balanceOf(address user, uint96 pocketId) internal view returns (uint256);
 ```
 
 ### _toMintId
