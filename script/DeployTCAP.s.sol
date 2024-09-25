@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import "forge-std/Script.sol";
-import "script/deployers/TCAPV2Deployer.s.sol";
+import "./deployers/TCAPV2Deployer.s.sol";
 import {TCAPTargetOracle} from "../src/oracle/TCAPTargetOracle.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";

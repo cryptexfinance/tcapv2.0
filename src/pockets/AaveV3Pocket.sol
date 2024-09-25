@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IPocket, BasePocket} from "./BasePocket.sol";
+import {BasePocket} from "./BasePocket.sol";
 import {IVersioned} from "../interface/IVersioned.sol";
 import {IPool} from "@aave/interfaces/IPool.sol";
 import {IAaveV3Pocket} from "../interface/pockets/IAaveV3Pocket.sol";

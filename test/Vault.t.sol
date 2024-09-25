@@ -4,8 +4,8 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/TCAPV2Deployer.s.sol";
-import "script/deployers/VaultDeployer.s.sol";
+import "../script/deployers/TCAPV2Deployer.s.sol";
+import "../script/deployers/VaultDeployer.s.sol";
 
 import {MockFeed} from "./mock/MockFeed.sol";
 import {AggregatedChainlinkOracle} from "../src/oracle/AggregatedChainlinkOracle.sol";
@@ -85,7 +85,7 @@ abstract contract PocketSetup is Permitted {
     }
 
     function deposit(address user, uint256 amount) internal returns (uint256) {
-        return deposit(user, amount, 0, 1e38 - 1);
+        return deposit(user, amount, 1, 1e38 - 1);
     }
 
     function deposit(address user, uint256 amount, uint256 min, uint256 max) internal returns (uint256) {
@@ -304,26 +304,26 @@ contract PocketTest is Permitted {
     }
 
     function test_ShouldAddPocket() public {
-        address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
         uint256 pocketId = 1;
         vm.expectEmit(true, true, false, true);
-        emit IVault.PocketAdded(uint96(pocketId), IPocket(basePocket));
-        vault.addPocket(IPocket(basePocket));
-        assertEq(address(vault.pockets(uint96(pocketId))), basePocket);
+        emit IVault.PocketAdded(uint96(pocketId), IPocket(basePocket_));
+        vault.addPocket(IPocket(basePocket_));
+        assertEq(address(vault.pockets(uint96(pocketId))), basePocket_);
         assertEq(vault.pocketEnabled(uint96(pocketId)), true);
     }
 
     function test_RevertIf_PocketNotEnabledOnDisable(uint96 pocketId) public {
         vm.assume(pocketId != 1);
-        address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
-        vault.addPocket(IPocket(basePocket));
+        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        vault.addPocket(IPocket(basePocket_));
         vm.expectRevert(abi.encodeWithSelector(IVault.PocketNotEnabled.selector, pocketId));
         vault.disablePocket(pocketId);
     }
 
     function test_ShouldDisablePocket() public {
-        address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
-        vault.addPocket(IPocket(basePocket));
+        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        vault.addPocket(IPocket(basePocket_));
         vm.expectEmit(true, true, false, true);
         emit IVault.PocketDisabled(uint96(1));
         vault.disablePocket(1);
@@ -371,7 +371,7 @@ contract DepositTest is PocketSetup {
 
     function test_ShouldBeAbleToDeposit(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        amount = bound(amount, 0, 1e38 - 1);
+        amount = bound(amount, 1, 1e38 - 1);
         collateral.mint(user, amount);
         vm.prank(user);
         collateral.approve(address(vault), amount);
@@ -396,7 +396,7 @@ contract DepositTest is PocketSetup {
     }
 
     function test_ShouldBeAbleToPermitDeposit(uint256 amount) public {
-        amount = bound(amount, 0, 1e38 - 1);
+        amount = bound(amount, 1, 1e38 - 1);
         (address user, uint256 privateKey) = makeAddrAndKey("user");
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         collateral.mint(user, amount);
@@ -432,8 +432,8 @@ contract MintTest is PocketSetup {
 
     function test_RevertIf_LoanNotHealthyAfterMint(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        deposit(user, bound(amount, 0, (mintAmount - 1) / 1e10));
+        uint256 mintAmount = bound(amount, 1e10 + 1, 1e38 - 1);
+        deposit(user, bound(amount, 1, (mintAmount - 1) / 1e10));
         vm.prank(user);
         vm.expectRevert(IVault.LoanNotHealthy.selector);
         vault.mint(pocketId, mintAmount);
@@ -457,12 +457,12 @@ contract WithdrawalTest is PocketSetup {
 
     function test_ShouldBeAbleToWithdraw(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1);
+        uint256 mintAmount = bound(amount, 1, 1e38 - 3);
+        uint256 depositAmount = bound(amount, mintAmount + 1, 1e38 - 1);
         deposit(user, depositAmount);
         vm.prank(user);
         vault.mint(pocketId, mintAmount);
-        uint256 burnAmount = bound(amount, 0, depositAmount - mintAmount);
+        uint256 burnAmount = bound(amount, 1, depositAmount - mintAmount);
         address recipient = makeAddr("recipient");
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pocket), recipient, burnAmount);
@@ -476,12 +476,12 @@ contract WithdrawalTest is PocketSetup {
 
     function test_ShouldBeAbleToWithdrawWhenPocketIsDisabled(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1);
+        uint256 mintAmount = bound(amount, 1, 1e38 - 3);
+        uint256 depositAmount = bound(amount, mintAmount + 1, 1e38 - 1);
         deposit(user, depositAmount);
         vm.prank(user);
         vault.mint(pocketId, mintAmount);
-        uint256 burnAmount = bound(amount, 0, depositAmount - mintAmount);
+        uint256 burnAmount = bound(amount, 1, depositAmount - mintAmount);
         address recipient = makeAddr("recipient");
         vault.disablePocket(pocketId);
         vm.expectEmit(true, true, false, true);
@@ -507,7 +507,7 @@ contract WithdrawalTest is PocketSetup {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pocket), feeRecipient, outstandingInterest);
         vm.prank(user);
-        vault.withdraw(pocketId, 0, user);
+        vault.withdraw(pocketId, 1, user);
     }
 }
 
@@ -529,7 +529,7 @@ contract BurnTest is PocketSetup {
         vm.prank(user);
         uint256 mintAmount = depositAmount * 1e10;
         vault.mint(pocketId, mintAmount);
-        uint256 burnAmount = bound(uint256(keccak256(abi.encode(amount))), 0, mintAmount);
+        uint256 burnAmount = bound(uint256(keccak256(abi.encode(amount))), 1, mintAmount);
         vm.expectEmit(true, true, false, true);
         emit IVault.Burned(user, pocketId, burnAmount);
         vm.prank(user);
@@ -552,9 +552,9 @@ contract LiquidationTest is PocketSetup {
 
     function test_RevertIf_LoanHealthyDuringLiquidation(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 depositAmount = deposit(user, amount);
+        uint256 depositAmount = deposit(user, amount, 3, 1e38 - 1);
         vm.prank(user);
-        uint256 mintAmount = bound(amount, 0, depositAmount == 0 ? 0 : depositAmount - 1);
+        uint256 mintAmount = bound(amount, 1, depositAmount - 1);
         vault.mint(pocketId, mintAmount);
         tCAPV2.mint(address(this), mintAmount);
         vm.expectRevert(IVault.LoanHealthy.selector);

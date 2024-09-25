@@ -65,7 +65,6 @@ contract BasePocket is IPocket, Initializable {
     /// @inheritdoc IPocket
     function withdraw(address user, uint256 amountUnderlying, address recipient) external onlyVault returns (uint256 shares) {
         if (amountUnderlying == type(uint256).max) {
-            amountUnderlying = _balanceOf(user);
             shares = sharesOf(user);
         } else {
             shares = amountUnderlying * totalShares() / _totalBalance();

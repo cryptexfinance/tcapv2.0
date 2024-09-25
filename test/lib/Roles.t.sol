@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
-import "script/deployers/TCAPV2Deployer.s.sol";
-import "script/deployers/VaultDeployer.s.sol";
+import "../../script/deployers/TCAPV2Deployer.s.sol";
+import "../../script/deployers/VaultDeployer.s.sol";
 import {Roles} from "../../src/lib/Constants.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
 

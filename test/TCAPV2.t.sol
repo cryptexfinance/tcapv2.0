@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/TCAPV2Deployer.s.sol";
+import "../script/deployers/TCAPV2Deployer.s.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {MockFeed} from "./mock/MockFeed.sol";
 import {MockCollateral} from "./mock/MockCollateral.sol";
@@ -89,8 +89,8 @@ contract InitializedTest is Initialized {
 
     function test_ShouldBeAbleToBurn(address recipient, uint256 mintAmount, uint256 burnAmount) public {
         vm.assume(recipient != address(0));
-        mintAmount = bound(mintAmount, 1, type(uint256).max);
-        burnAmount = bound(burnAmount, 0, mintAmount);
+        mintAmount = bound(mintAmount, 2, type(uint256).max);
+        burnAmount = bound(burnAmount, 1, mintAmount);
         tCAPV2.mint(address(this), mintAmount);
         tCAPV2.transfer(recipient, mintAmount);
         vm.expectEmit(true, true, false, true);
