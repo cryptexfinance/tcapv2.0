@@ -2,14 +2,14 @@
 pragma solidity 0.8.26;
 
 import "forge-std/Script.sol";
-import "./deployers/TCAPV2Deployer.s.sol";
 import {TCAPTargetOracle} from "../src/oracle/TCAPTargetOracle.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {AggregatorV3Interface} from "@chainlink/interfaces/feeds/AggregatorV3Interface.sol";
 import {Roles} from "../src/lib/Constants.sol";
+import {TCAPV2, ITCAPV2} from "../src/TCAPV2.sol";
 
-contract Deploy is Script, TCAPV2Deployer {
+contract Deploy is Script {
     using stdJson for string;
 
     function run() public {
