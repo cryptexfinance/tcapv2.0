@@ -1,5 +1,5 @@
 # TCAPTargetOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/oracle/TCAPTargetOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/55fee5686407b0eff65f8c90731b3d51888021cf/src/oracle/TCAPTargetOracle.sol)
 
 **Inherits:**
 [AggregatedChainlinkOracle](/src/oracle/AggregatedChainlinkOracle.sol/contract.AggregatedChainlinkOracle.md)
@@ -19,6 +19,6 @@ constructor(ITCAPV2 tcap, address feed_) AggregatedChainlinkOracle(feed_, addres
 
 
 ```solidity
-function latestPrice() public view virtual override returns (uint256);
+function latestPrice(bool checkStaleness) public view virtual override returns (uint256);
 ```
 

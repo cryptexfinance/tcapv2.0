@@ -24,12 +24,11 @@ abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
             vm.createSelectFork(rpcUrl);
             forked = true;
             console2.log("Forked Ethereum mainnet");
+            address vault = makeAddr("vault");
+            aaveV3Pocket = AaveV3Pocket(deployAaveV3PocketImplementation(vault, address(underlyingToken), POOL_MAINNET));
         } catch {
             console2.log("Skipping forked tests, no infura key found. Add key to .env to run forked tests.");
         }
-
-        address vault = makeAddr("vault");
-        aaveV3Pocket = AaveV3Pocket(deployAaveV3PocketImplementation(vault, address(underlyingToken), POOL_MAINNET));
     }
 
     modifier onlyForked() {
@@ -68,7 +67,7 @@ abstract contract Deposited is Initialized {
 }
 
 contract UninitializedTest is Uninitialized {
-    function test_InitialState() public {
+    function test_InitialState() public onlyForked {
         assertEq(aaveV3Pocket.totalShares(), 0);
         assertEq(address(aaveV3Pocket.VAULT()), makeAddr("vault"));
         assertEq(address(aaveV3Pocket.UNDERLYING_TOKEN()), address(underlyingToken));
@@ -77,7 +76,7 @@ contract UninitializedTest is Uninitialized {
         assertEq(aaveV3Pocket.version(), "1.0.0");
     }
 
-    function test_RevertsOnInitialization() public {
+    function test_RevertsOnInitialization() public onlyForked {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         aaveV3Pocket.initialize();
     }
@@ -125,8 +124,6 @@ contract WithdrawTest is Deposited {
         uint256 sharesBefore = aaveV3Pocket.sharesOf(user);
         uint256 balanceRecipientBefore = underlyingToken.balanceOf(recipient);
         uint256 balancePocketBefore = overlyingAToken.balanceOf(address(aaveV3Pocket));
-        console2.log("shares", shares);
-        console2.log("amount", amount);
         vm.expectEmit(true, true, false, true);
         emit IPocket.Withdrawal(user, recipient, amount, amount, shares);
         aaveV3Pocket.withdraw(user, amount, recipient);

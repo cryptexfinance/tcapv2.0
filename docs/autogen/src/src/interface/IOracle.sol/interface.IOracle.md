@@ -1,5 +1,5 @@
 # IOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/7c3050a56e3f1bad1a100f3e506744d0c71a8807/src/interface/IOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/55fee5686407b0eff65f8c90731b3d51888021cf/src/interface/IOracle.sol)
 
 Interface that needs to be implemented by all oracles
 
@@ -24,7 +24,7 @@ function asset() external view returns (address);
 
 
 ```solidity
-function latestPrice() external view returns (uint256);
+function latestPrice(bool checkStaleness) external view returns (uint256);
 ```
 **Returns**
 
@@ -40,5 +40,13 @@ Should be thrown when the oracle is not valid
 
 ```solidity
 error InvalidOracle();
+```
+
+### StaleOracle
+Thrown when the oracle is stale
+
+
+```solidity
+error StaleOracle();
 ```
 

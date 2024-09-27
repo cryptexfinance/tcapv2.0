@@ -73,7 +73,7 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     /// @inheritdoc ITCAPV2
     function latestPrice() public view returns (uint256) {
         TCAPV2Storage storage $ = _getTCAPV2Storage();
-        return $.oracle.latestPrice();
+        return $.oracle.latestPrice(false);
     }
 
     /// @inheritdoc ITCAPV2

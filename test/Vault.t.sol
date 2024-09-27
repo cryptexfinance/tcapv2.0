@@ -31,6 +31,7 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
     address feeRecipient = makeAddr("feeRecipient");
 
     function setUp() public virtual {
+        vm.warp(block.timestamp + 2 days);
         /// @dev mock collateral has 8 decimals, therefore adjust mint and deposit amounts by 1e10
         collateral = new MockCollateral();
         permit2 = Deploy.permit2();

@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/c8b18bb160f52905d87ef82a6a1c3fee16403c7f/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/55fee5686407b0eff65f8c90731b3d51888021cf/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -50,7 +50,7 @@ uint8 private immutable COLLATERAL_DECIMALS;
 
 
 ```solidity
-modifier ensureLoanHealthy(address user, uint96 pocketId);
+modifier ensureLoanHealthy(address user, uint96 pocketId, bool checkStaleness);
 ```
 
 ### constructor
@@ -240,7 +240,7 @@ Withdraws collateral from a pocket
 
 
 ```solidity
-function withdraw(uint96 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId) returns (uint256 shares);
+function withdraw(uint96 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId, false) returns (uint256 shares);
 ```
 **Parameters**
 
@@ -265,7 +265,7 @@ Mints TCAP tokens
 
 
 ```solidity
-function mint(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId);
+function mint(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId, true);
 ```
 **Parameters**
 
@@ -360,7 +360,7 @@ Returns the health factor of a user
 
 
 ```solidity
-function healthFactor(address user, uint96 pocketId) public view returns (uint256);
+function healthFactor(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
@@ -510,7 +510,7 @@ function outstandingInterestOf(address user, uint96 pocketId) public view return
 
 
 ```solidity
-function latestPrice() public view returns (uint256);
+function latestPrice() external view returns (uint256);
 ```
 **Returns**
 
@@ -637,6 +637,20 @@ function _updateOracle(address newOracle) internal;
 
 ```solidity
 function _getPocket(uint96 pocketId) internal view returns (IPocket);
+```
+
+### _latestPrice
+
+
+```solidity
+function _latestPrice(bool checkStaleness) internal view returns (uint256);
+```
+
+### _healthFactor
+
+
+```solidity
+function _healthFactor(address user, uint96 pocketId, bool checkStaleness) internal view returns (uint256);
 ```
 
 ### _balanceOf

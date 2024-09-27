@@ -63,9 +63,9 @@ contract Vault is IVault, AccessControl, Multicall {
     uint8 private immutable COLLATERAL_DECIMALS;
 
     /// @dev ensures loan is healthy after any action is performed
-    modifier ensureLoanHealthy(address user, uint96 pocketId) {
+    modifier ensureLoanHealthy(address user, uint96 pocketId, bool checkStaleness) {
         _;
-        if (healthFactor(user, pocketId) < liquidationParams().threshold) revert LoanNotHealthy();
+        if (_healthFactor(user, pocketId, checkStaleness) < liquidationParams().threshold) revert LoanNotHealthy();
     }
 
     constructor(ITCAPV2 tCAPV2_, IERC20 collateral_, IPermit2 permit2_) {
@@ -156,7 +156,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function withdraw(uint96 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId) returns (uint256 shares) {
+    function withdraw(uint96 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId, false) returns (uint256 shares) {
         if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         // @audit should be able to withdraw even if pocket is disabled
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
@@ -167,7 +167,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function mint(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId) {
+    function mint(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId, true) {
         if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         MintData storage $ = _getVaultStorage().mintData;
         $.modifyPosition(_toMintId(msg.sender, pocketId), amount.toInt256());
@@ -197,7 +197,7 @@ contract Vault is IVault, AccessControl, Multicall {
         if (burnAmount > mintAmount) revert InvalidValue(IVault.ErrorCode.INVALID_BURN_AMOUNT);
         uint256 tcapPrice = TCAPV2.latestPrice();
         uint256 collateralAmount = collateralOf(user, pocketId);
-        uint256 collateralPrice = latestPrice();
+        uint256 collateralPrice = _latestPrice(false);
         IVault.LiquidationParams memory liquidation = liquidationParams();
         uint256 healthFactor_ = LiquidationLib.healthFactor(mintAmount, tcapPrice, collateralAmount, collateralPrice, COLLATERAL_DECIMALS);
         if (healthFactor_ >= liquidation.threshold) revert LoanHealthy();
@@ -251,14 +251,13 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function healthFactor(address user, uint96 pocketId) public view returns (uint256) {
-        return
-            LiquidationLib.healthFactor(mintedAmountOf(user, pocketId), TCAPV2.latestPrice(), collateralOf(user, pocketId), latestPrice(), COLLATERAL_DECIMALS);
+    function healthFactor(address user, uint96 pocketId) external view returns (uint256) {
+        return _healthFactor(user, pocketId, false);
     }
 
     /// @inheritdoc IVault
     function collateralValueOf(uint256 amount) public view returns (uint256) {
-        return amount * latestPrice() / 10 ** COLLATERAL_DECIMALS;
+        return amount * _latestPrice(false) / 10 ** COLLATERAL_DECIMALS;
     }
 
     /// @inheritdoc IVault
@@ -288,12 +287,12 @@ contract Vault is IVault, AccessControl, Multicall {
     function outstandingInterestOf(address user, uint96 pocketId) public view returns (uint256) {
         MintData storage $ = _getVaultStorage().mintData;
         uint256 interestAmount = $.interestOf(_toMintId(user, pocketId));
-        return interestAmount * TCAPV2.latestPrice() / latestPrice() * 10 ** COLLATERAL_DECIMALS / 10 ** Constants.TCAP_DECIMALS;
+        return interestAmount * TCAPV2.latestPrice() / _latestPrice(false) * 10 ** COLLATERAL_DECIMALS / 10 ** Constants.TCAP_DECIMALS;
     }
 
     /// @inheritdoc IVault
-    function latestPrice() public view returns (uint256) {
-        return _getVaultStorage().oracle.latestPrice();
+    function latestPrice() external view returns (uint256) {
+        return _latestPrice(false);
     }
 
     /// @inheritdoc IVault
@@ -383,6 +382,16 @@ contract Vault is IVault, AccessControl, Multicall {
         Pocket storage p = _getVaultStorage().pockets[pocketId];
         if (!p.enabled) revert PocketNotEnabled(pocketId);
         return p.pocket;
+    }
+
+    function _latestPrice(bool checkStaleness) internal view returns (uint256) {
+        return _getVaultStorage().oracle.latestPrice(checkStaleness);
+    }
+
+    function _healthFactor(address user, uint96 pocketId, bool checkStaleness) internal view returns (uint256) {
+        return LiquidationLib.healthFactor(
+            mintedAmountOf(user, pocketId), TCAPV2.latestPrice(), collateralOf(user, pocketId), _latestPrice(checkStaleness), COLLATERAL_DECIMALS
+        );
     }
 
     function _balanceOf(address user, uint96 pocketId) internal view returns (uint256) {

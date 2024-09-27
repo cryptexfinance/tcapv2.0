@@ -15,9 +15,15 @@ contract AggregatedChainlinkOracle is BaseOracleUSD {
         feedDecimals = feed.decimals();
     }
 
-    function latestPrice() public view virtual override returns (uint256) {
-        (, int256 answer,,,) = feed.latestRoundData();
+    function latestPrice(bool checkStaleness) public view virtual override returns (uint256) {
+        (, int256 answer,, uint256 updatedAt,) = feed.latestRoundData();
         // @audit in case of a stale oracle do not revert because it would prevent users from withdrawing
+        // @audit only check staleness during minting to ensure staleness of price doesn't allow for arbitrage
+        if (checkStaleness) {
+            if (updatedAt < block.timestamp - 1 days) {
+                revert StaleOracle();
+            }
+        }
         assert(answer > 0);
         // @audit feed decimals cannot exceed 18
         uint256 adjustedDecimalsAnswer = uint256(answer) * 10 ** (18 - feedDecimals);
