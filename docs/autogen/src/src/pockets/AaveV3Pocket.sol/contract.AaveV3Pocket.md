@@ -1,5 +1,5 @@
 # AaveV3Pocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/495451d159fb10c010b98bdc7bc685a1a59dc8d3/src/pockets/AaveV3Pocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/cfd4479571dabebf4da5afd03c0fa4c7d96fd55b/src/pockets/AaveV3Pocket.sol)
 
 **Inherits:**
 [BasePocket](/src/pockets/BasePocket.sol/contract.BasePocket.md), [IAaveV3Pocket](/src/interface/pockets/IAaveV3Pocket.sol/interface.IAaveV3Pocket.md)
@@ -20,7 +20,8 @@ IPool public immutable POOL;
 
 
 ```solidity
-constructor(address vault_, address underlyingToken_, address overlyingToken_, address aavePool) BasePocket(vault_, underlyingToken_, overlyingToken_);
+constructor(address vault_, address underlyingToken_, address aavePool)
+    BasePocket(vault_, underlyingToken_, IPool(aavePool).getReserveData(underlyingToken_).aTokenAddress);
 ```
 
 ### initialize

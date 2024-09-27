@@ -29,7 +29,7 @@ abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
         }
 
         address vault = makeAddr("vault");
-        aaveV3Pocket = AaveV3Pocket(deployAaveV3PocketImplementation(vault, address(underlyingToken), address(overlyingAToken), POOL_MAINNET));
+        aaveV3Pocket = AaveV3Pocket(deployAaveV3PocketImplementation(vault, address(underlyingToken), POOL_MAINNET));
     }
 
     modifier onlyForked() {
@@ -47,7 +47,7 @@ abstract contract Initialized is Uninitialized {
         super.setUp();
         if (forked) {
             address admin = address(this);
-            deployAaveV3PocketTransparent(admin, address(this), address(underlyingToken), address(overlyingAToken), POOL_MAINNET);
+            deployAaveV3PocketTransparent(admin, address(this), address(underlyingToken), POOL_MAINNET);
         }
     }
 }
