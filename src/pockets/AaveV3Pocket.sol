@@ -31,7 +31,9 @@ contract AaveV3Pocket is BasePocket, IAaveV3Pocket {
     /// @dev redeems aTokens with Aave v3, underlying token is returned to user
     function _onWithdraw(uint256 amountOverlying, address recipient) internal override returns (uint256 amountUnderlying) {
         if (amountOverlying == 0) return 0;
-        POOL.withdraw(address(UNDERLYING_TOKEN), amountOverlying, recipient);
+        uint256 amountWithdrawn = POOL.withdraw(address(UNDERLYING_TOKEN), amountOverlying, recipient);
+        // https://github.com/code-423n4/2022-06-connext-findings/issues/181
+        assert(amountWithdrawn == amountOverlying);
         return amountOverlying;
     }
 
