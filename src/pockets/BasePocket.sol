@@ -5,6 +5,7 @@ import {IPocket, IVault, IVersioned} from "../interface/pockets/IPocket.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeTransferLib} from "solady/src/utils/SafeTransferLib.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {Constants} from "../lib/Constants.sol";
 
 /// @title Base Pocket
 /// @notice The base pocket stores all funds in this contract
@@ -52,13 +53,13 @@ contract BasePocket is IPocket, Initializable {
         if (totalShares_ > 0) {
             shares = (totalShares_ * amountOverlying) / (OVERLYING_TOKEN.balanceOf(address(this)) - amountOverlying);
         } else {
-            shares = amountOverlying;
+            shares = amountOverlying * Constants.DECIMAL_OFFSET;
         }
         BasePocketStorage storage $ = _getBasePocketStorage();
         $.totalShares += shares;
         $.sharesOf[user] += shares;
         // @audit should not happen, prevent overflow when calculating balance
-        assert($.sharesOf[user] < 1e38);
+        assert($.sharesOf[user] < 1e41);
         emit Deposit(user, amountUnderlying, amountOverlying, shares);
     }
 

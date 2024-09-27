@@ -9,6 +9,7 @@ import {MockCollateral} from "../mock/MockCollateral.sol";
 import {IWETH9, IERC20} from "../interface/IWETH9.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IPocket} from "../../src/interface/pockets/IPocket.sol";
+import {Constants} from "../../src/lib/Constants.sol";
 
 abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
     address POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
@@ -98,10 +99,10 @@ contract DepositTest is Initialized {
         underlyingToken.deposit{value: amount}();
         underlyingToken.transfer(address(aaveV3Pocket), amount);
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Deposit(user, amount, amount, amount);
+        emit IPocket.Deposit(user, amount, amount, amount * Constants.DECIMAL_OFFSET);
         aaveV3Pocket.registerDeposit(user, amount);
-        assertEq(aaveV3Pocket.totalShares(), amount);
-        assertEq(aaveV3Pocket.sharesOf(user), amount);
+        assertEq(aaveV3Pocket.totalShares(), amount * Constants.DECIMAL_OFFSET);
+        assertEq(aaveV3Pocket.sharesOf(user), amount * Constants.DECIMAL_OFFSET);
         assertApproxEqAbs(aaveV3Pocket.balanceOf(user), amount, 1);
         assertApproxEqAbs(aaveV3Pocket.totalBalance(), amount, 1);
     }
@@ -115,20 +116,23 @@ contract WithdrawTest is Deposited {
         aaveV3Pocket.withdraw(user, shares, user);
     }
 
-    function test_shouldBurnShares(uint256 shares) public onlyForked {
+    function test_shouldBurnSharesAave(uint256 amount) public onlyForked {
         address user = makeAddr("alice");
         address recipient = makeAddr("recipient");
-        shares = bound(shares, 0, aaveV3Pocket.sharesOf(user));
+        amount = bound(amount, 0, aaveV3Pocket.balanceOf(user));
         uint256 totalSharesBefore = aaveV3Pocket.totalShares();
+        uint256 shares = amount * Constants.DECIMAL_OFFSET;
         uint256 sharesBefore = aaveV3Pocket.sharesOf(user);
         uint256 balanceRecipientBefore = underlyingToken.balanceOf(recipient);
         uint256 balancePocketBefore = overlyingAToken.balanceOf(address(aaveV3Pocket));
+        console2.log("shares", shares);
+        console2.log("amount", amount);
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Withdrawal(user, recipient, shares, shares, shares);
-        aaveV3Pocket.withdraw(user, shares, recipient);
+        emit IPocket.Withdrawal(user, recipient, amount, amount, shares);
+        aaveV3Pocket.withdraw(user, amount, recipient);
         assertEq(aaveV3Pocket.totalShares(), totalSharesBefore - shares);
         assertEq(aaveV3Pocket.sharesOf(user), sharesBefore - shares);
-        assertEq(underlyingToken.balanceOf(recipient), balanceRecipientBefore + shares);
-        assertApproxEqAbs(overlyingAToken.balanceOf(address(aaveV3Pocket)), balancePocketBefore - shares, 1);
+        assertEq(underlyingToken.balanceOf(recipient), balanceRecipientBefore + amount);
+        assertApproxEqAbs(overlyingAToken.balanceOf(address(aaveV3Pocket)), balancePocketBefore - amount, 1);
     }
 }

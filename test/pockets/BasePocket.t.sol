@@ -91,14 +91,14 @@ contract PermissionTest is Initialized {
 
 contract InitialDepositTest is Initialized {
     function test_shouldMintInitialShares(uint256 amount) public {
-        amount = bound(amount, 1, 1e38 - 1);
+        amount = bound(amount, 1, 1e35 - 1);
         address user = makeAddr("alice");
         collateral.mint(address(basePocket), amount);
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Deposit(user, amount, amount, amount);
+        emit IPocket.Deposit(user, amount, amount, amount * Constants.DECIMAL_OFFSET);
         basePocket.registerDeposit(user, amount);
-        assertEq(basePocket.totalShares(), amount);
-        assertEq(basePocket.sharesOf(user), amount);
+        assertEq(basePocket.totalShares(), amount * Constants.DECIMAL_OFFSET);
+        assertEq(basePocket.sharesOf(user), amount * Constants.DECIMAL_OFFSET);
         assertEq(basePocket.balanceOf(user), amount);
         assertEq(basePocket.totalBalance(), amount);
     }
@@ -107,15 +107,15 @@ contract InitialDepositTest is Initialized {
 contract SubsequentDepositsTest is InitialDeposited {
     function test_shouldMintSubsequentShares(uint256 amount) public {
         address user = makeAddr("bob");
-        amount = bound(amount, 1, 1e38 - 1);
+        amount = bound(amount, 1, 1e35 - 1);
         uint256 totalSharesBefore = basePocket.totalShares();
         uint256 totalBalanceBefore = basePocket.totalBalance();
         collateral.mint(address(basePocket), amount);
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Deposit(user, amount, amount, amount);
+        emit IPocket.Deposit(user, amount, amount, amount * Constants.DECIMAL_OFFSET);
         basePocket.registerDeposit(user, amount);
-        assertEq(basePocket.totalShares(), totalSharesBefore + amount);
-        assertEq(basePocket.sharesOf(user), amount);
+        assertEq(basePocket.totalShares(), totalSharesBefore + amount * Constants.DECIMAL_OFFSET);
+        assertEq(basePocket.sharesOf(user), amount * Constants.DECIMAL_OFFSET);
         assertEq(basePocket.balanceOf(user), amount);
         assertEq(basePocket.totalBalance(), totalBalanceBefore + amount);
     }
@@ -123,7 +123,7 @@ contract SubsequentDepositsTest is InitialDeposited {
 
 contract BalanceFluctuationTest is Deposited {
     function test_shouldAllocateBalancesCorrectlyIfUnderlyingBalanceChanges(int256 balanceChange) public {
-        balanceChange = bound(balanceChange, int256(basePocket.totalShares()) * -1, int256(type(int128).max));
+        balanceChange = bound(balanceChange, int256(basePocket.totalShares()) * -1, int256(type(int128).max)) / int256(Constants.DECIMAL_OFFSET);
         address user = makeAddr("alice");
         uint256 totalBalanceBefore = basePocket.totalBalance();
         uint256 totalShares = basePocket.totalShares();
@@ -148,12 +148,12 @@ contract WithdrawTest is Deposited {
         basePocket.withdraw(user, amountUnderlying, user);
     }
 
-    function test_shouldBurnShares(uint256 amountUnderlying) public {
+    function test_shouldBurnSharesBase(uint256 amountUnderlying) public {
         address user = makeAddr("alice");
         address recipient = makeAddr("recipient");
         uint256 expectedUnderlying;
         if (amountUnderlying != type(uint256).max) {
-            amountUnderlying = bound(amountUnderlying, 0, basePocket.sharesOf(user));
+            amountUnderlying = bound(amountUnderlying, 0, basePocket.balanceOf(user));
             expectedUnderlying = amountUnderlying;
         } else {
             expectedUnderlying = basePocket.balanceOf(user);
@@ -162,11 +162,12 @@ contract WithdrawTest is Deposited {
         uint256 sharesBefore = basePocket.sharesOf(user);
         uint256 balanceRecipientBefore = collateral.balanceOf(recipient);
         uint256 balancePocketBefore = collateral.balanceOf(address(basePocket));
+        uint256 expectedShares = expectedUnderlying * totalSharesBefore / basePocket.totalBalance();
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Withdrawal(user, recipient, expectedUnderlying, expectedUnderlying, expectedUnderlying);
+        emit IPocket.Withdrawal(user, recipient, expectedUnderlying, expectedUnderlying, expectedShares);
         basePocket.withdraw(user, amountUnderlying, recipient);
-        assertEq(basePocket.totalShares(), totalSharesBefore - expectedUnderlying);
-        assertEq(basePocket.sharesOf(user), sharesBefore - expectedUnderlying);
+        assertEq(basePocket.totalShares(), totalSharesBefore - expectedShares);
+        assertEq(basePocket.sharesOf(user), sharesBefore - expectedShares);
         assertEq(collateral.balanceOf(recipient), balanceRecipientBefore + expectedUnderlying);
         assertEq(collateral.balanceOf(address(basePocket)), balancePocketBefore - expectedUnderlying);
     }

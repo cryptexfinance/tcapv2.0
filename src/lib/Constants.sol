@@ -10,6 +10,8 @@ library Constants {
     uint256 internal constant MAX_FEE = 10_000; // 100%
     uint8 internal constant TCAP_DECIMALS = 18;
     uint256 internal constant DIVISOR = 1e10;
+    /// @dev multiply pocket shares with a decimal offset to mitigate inflation attack
+    uint256 internal constant DECIMAL_OFFSET = 1e6;
 }
 
 library Roles {
