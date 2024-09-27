@@ -232,9 +232,9 @@ contract Vault is IVault, AccessControl, Multicall {
             }
         }
 
-        pocket.withdraw(user, liquidationReward, msg.sender);
         _getVaultStorage().mintData.modifyPosition(_toMintId(user, pocketId), -1 * (burnAmount.toInt256()));
         TCAPV2.burn(msg.sender, burnAmount);
+        pocket.withdraw(user, liquidationReward, msg.sender);
         emit Liquidated(msg.sender, user, pocketId, liquidationReward, burnAmount);
     }
 
@@ -333,8 +333,8 @@ contract Vault is IVault, AccessControl, Multicall {
         VaultStorage storage $ = _getVaultStorage();
         address feeRecipient_ = $.feeRecipient;
         if (interest != 0 && feeRecipient_ != address(0)) {
-            pocket.withdraw(user, interest, feeRecipient_);
             $.mintData.resetInterestOf(_toMintId(user, pocketId));
+            pocket.withdraw(user, interest, feeRecipient_);
             emit FeeCollected(user, pocketId, feeRecipient_, interest);
         }
     }
