@@ -4,8 +4,8 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/TCAPV2Deployer.s.sol";
-import "script/deployers/VaultDeployer.s.sol";
+import "../script/deployers/TCAPV2Deployer.s.sol";
+import "../script/deployers/VaultDeployer.s.sol";
 
 import {MockFeed} from "./mock/MockFeed.sol";
 import {AggregatedChainlinkOracle} from "../src/oracle/AggregatedChainlinkOracle.sol";
@@ -15,7 +15,7 @@ import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol"
 import {Deploy} from "./util/Deploy.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {BasePocket} from "../src/pockets/BasePocket.sol";
-import {Constants} from "../src/lib/Constants.sol";
+import {Constants, Roles} from "../src/lib/Constants.sol";
 
 abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deployer {
     MockCollateral collateral;
@@ -31,13 +31,15 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
     address feeRecipient = makeAddr("feeRecipient");
 
     function setUp() public virtual {
+        vm.warp(block.timestamp + 2 days);
+        /// @dev mock collateral has 8 decimals, therefore adjust mint and deposit amounts by 1e10
         collateral = new MockCollateral();
         permit2 = Deploy.permit2();
         deployTCAPV2Transparent(admin, admin);
-        tCAPV2.grantRole(tCAPV2.ORACLE_SETTER_ROLE(), admin);
-        tCAPV2.grantRole(tCAPV2.VAULT_ROLE(), admin);
+        tCAPV2.grantRole(Roles.ORACLE_SETTER_ROLE, admin);
+        tCAPV2.grantRole(Roles.VAULT_ROLE, admin);
         uint256 collateralPrice = 1000;
-        feedTCAP = new MockFeed(collateralPrice * tCAPV2.DIVISOR() * 1e8);
+        feedTCAP = new MockFeed(collateralPrice * Constants.DIVISOR * 1e8);
         oracleTCAP = new TCAPTargetOracle(tCAPV2, address(feedTCAP));
         tCAPV2.setOracle(address(oracleTCAP));
 
@@ -63,11 +65,11 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
 abstract contract Permitted is Initialized {
     function setUp() public virtual override {
         super.setUp();
-        tCAPV2.grantRole(tCAPV2.VAULT_ROLE(), address(vault));
-        vault.grantRole(vault.POCKET_SETTER_ROLE(), admin);
-        vault.grantRole(vault.FEE_SETTER_ROLE(), admin);
-        vault.grantRole(vault.ORACLE_SETTER_ROLE(), admin);
-        vault.grantRole(vault.LIQUIDATION_SETTER_ROLE(), admin);
+        tCAPV2.grantRole(Roles.VAULT_ROLE, address(vault));
+        vault.grantRole(Roles.POCKET_SETTER_ROLE, admin);
+        vault.grantRole(Roles.FEE_SETTER_ROLE, admin);
+        vault.grantRole(Roles.ORACLE_SETTER_ROLE, admin);
+        vault.grantRole(Roles.LIQUIDATION_SETTER_ROLE, admin);
     }
 }
 
@@ -84,7 +86,11 @@ abstract contract PocketSetup is Permitted {
     }
 
     function deposit(address user, uint256 amount) internal returns (uint256) {
-        amount = bound(amount, 0, 1e38 - 1);
+        return deposit(user, amount, 1, 1e35 - 1);
+    }
+
+    function deposit(address user, uint256 amount, uint256 min, uint256 max) internal returns (uint256) {
+        amount = bound(amount, min, max);
         collateral.mint(user, amount);
         vm.prank(user);
         collateral.approve(address(vault), amount);
@@ -141,27 +147,27 @@ contract PermissionsTest is Initialized {
 
     function test_RevertIf_InvalidPermission_PocketSetter(address sender) public {
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.POCKET_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.POCKET_SETTER_ROLE));
         vm.prank(sender);
         vault.addPocket(IPocket(makeAddr("pocket")));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.POCKET_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.POCKET_SETTER_ROLE));
         vm.prank(sender);
         vault.disablePocket(0);
     }
 
     function test_RevertIf_InvalidPermission_FeeSetter(address sender) public {
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.FEE_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.FEE_SETTER_ROLE));
         vm.prank(sender);
         vault.updateInterestRate(0);
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.FEE_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.FEE_SETTER_ROLE));
         vm.prank(sender);
         vault.updateFeeRecipient(feeRecipient);
     }
 
     function test_RevertIf_InvalidPermission_OracleSetter(address sender) public {
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.ORACLE_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.ORACLE_SETTER_ROLE));
         vm.prank(sender);
         vault.updateOracle(address(0));
     }
@@ -170,7 +176,7 @@ contract PermissionsTest is Initialized {
         IVault.LiquidationParams memory liquidationParams =
             IVault.LiquidationParams({threshold: 1.5e18, penalty: 0.05e18, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18});
         vm.assume(sender != address(vaultProxyAdmin));
-        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, vault.LIQUIDATION_SETTER_ROLE()));
+        vm.expectRevert(abi.encodeWithSelector(AccessControlUnauthorizedAccount.selector, sender, Roles.LIQUIDATION_SETTER_ROLE));
         vm.prank(sender);
         vault.updateLiquidationParams(liquidationParams);
     }
@@ -299,27 +305,26 @@ contract PocketTest is Permitted {
     }
 
     function test_ShouldAddPocket() public {
-        address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
         uint256 pocketId = 1;
         vm.expectEmit(true, true, false, true);
-        emit IVault.PocketAdded(uint96(pocketId), IPocket(basePocket));
-        vault.addPocket(IPocket(basePocket));
-        assertEq(address(vault.pockets(uint96(pocketId))), basePocket);
+        emit IVault.PocketAdded(uint96(pocketId), IPocket(basePocket_));
+        vault.addPocket(IPocket(basePocket_));
+        assertEq(address(vault.pockets(uint96(pocketId))), basePocket_);
         assertEq(vault.pocketEnabled(uint96(pocketId)), true);
     }
 
     function test_RevertIf_PocketNotEnabledOnDisable(uint96 pocketId) public {
         vm.assume(pocketId != 1);
-        address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
-        vault.addPocket(IPocket(basePocket));
+        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        vault.addPocket(IPocket(basePocket_));
         vm.expectRevert(abi.encodeWithSelector(IVault.PocketNotEnabled.selector, pocketId));
         vault.disablePocket(pocketId);
     }
 
-    // TODO test that deposits to disabled pocket don't work but withdrawals work
     function test_ShouldDisablePocket() public {
-        address basePocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
-        vault.addPocket(IPocket(basePocket));
+        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        vault.addPocket(IPocket(basePocket_));
         vm.expectEmit(true, true, false, true);
         emit IVault.PocketDisabled(uint96(1));
         vault.disablePocket(1);
@@ -367,7 +372,7 @@ contract DepositTest is PocketSetup {
 
     function test_ShouldBeAbleToDeposit(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        amount = bound(amount, 0, 1e38 - 1);
+        amount = bound(amount, 1, 1e35 - 1);
         collateral.mint(user, amount);
         vm.prank(user);
         collateral.approve(address(vault), amount);
@@ -375,7 +380,7 @@ contract DepositTest is PocketSetup {
         vm.expectEmit(true, true, false, true);
         emit Transfer(user, address(pocket), amount);
         vm.expectEmit(true, true, false, true);
-        emit IVault.Deposited(user, pocketId, amount, amount);
+        emit IVault.Deposited(user, pocketId, amount, amount * Constants.DECIMAL_OFFSET);
         vault.deposit(pocketId, amount);
         assertEq(vault.collateralOf(user, pocketId), amount);
     }
@@ -392,7 +397,7 @@ contract DepositTest is PocketSetup {
     }
 
     function test_ShouldBeAbleToPermitDeposit(uint256 amount) public {
-        amount = bound(amount, 0, 1e38 - 1);
+        amount = bound(amount, 1, 1e35 - 1);
         (address user, uint256 privateKey) = makeAddrAndKey("user");
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         collateral.mint(user, amount);
@@ -408,7 +413,7 @@ contract DepositTest is PocketSetup {
         vm.expectEmit(true, true, false, true);
         emit Transfer(user, address(pocket), amount);
         vm.expectEmit(true, true, false, true);
-        emit IVault.Deposited(user, pocketId, amount, amount);
+        emit IVault.Deposited(user, pocketId, amount, amount * Constants.DECIMAL_OFFSET);
         vault.depositWithPermit(pocketId, amount, permit, signature);
         assertEq(vault.collateralOf(user, pocketId), amount);
     }
@@ -417,8 +422,8 @@ contract DepositTest is PocketSetup {
 contract MintTest is PocketSetup {
     function test_ShouldBeAbleToMint(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        deposit(user, bound(amount, mintAmount, 1e38 - 1));
+        uint256 mintAmount = bound(amount, 1, 1e35 - 1);
+        deposit(user, bound(amount, mintAmount, 1e35 - 1));
         vm.prank(user);
         vm.expectEmit(true, true, false, true);
         emit IVault.Minted(user, pocketId, mintAmount);
@@ -428,8 +433,8 @@ contract MintTest is PocketSetup {
 
     function test_RevertIf_LoanNotHealthyAfterMint(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        deposit(user, bound(amount, 0, mintAmount - 1));
+        uint256 mintAmount = bound(amount, 1e10 + 1, 1e35 - 1);
+        deposit(user, bound(amount, 1, (mintAmount - 1) / 1e10));
         vm.prank(user);
         vm.expectRevert(IVault.LoanNotHealthy.selector);
         vault.mint(pocketId, mintAmount);
@@ -439,12 +444,12 @@ contract MintTest is PocketSetup {
 contract WithdrawalTest is PocketSetup {
     function test_RevertIf_LoanNotHealthyAfterWithdrawal(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1);
+        uint256 mintAmount = bound(amount, 1e10, 1e35 - 1);
+        uint256 depositAmount = bound(amount, mintAmount, 1e35 - 1) / 1e10 + 1;
         deposit(user, depositAmount);
         vm.prank(user);
         vault.mint(pocketId, mintAmount);
-        uint256 burnAmount = bound(amount, depositAmount - mintAmount + 1, depositAmount);
+        uint256 burnAmount = bound(amount, depositAmount - mintAmount / 1e10 + 1, depositAmount);
         address recipient = makeAddr("recipient");
         vm.expectRevert(IVault.LoanNotHealthy.selector);
         vm.prank(user);
@@ -453,39 +458,37 @@ contract WithdrawalTest is PocketSetup {
 
     function test_ShouldBeAbleToWithdraw(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1);
-        deposit(user, depositAmount);
+        uint256 mintAmount = bound(amount, 1, 1e35 - 3);
+        uint256 depositAmount = deposit(user, amount, mintAmount + 1, 1e35 - 1);
         vm.prank(user);
         vault.mint(pocketId, mintAmount);
-        uint256 burnAmount = bound(amount, 0, depositAmount - mintAmount);
+        uint256 burnAmount = bound(amount, 1, depositAmount - mintAmount);
         address recipient = makeAddr("recipient");
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pocket), recipient, burnAmount);
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Withdrawal(user, recipient, burnAmount, burnAmount, burnAmount);
+        emit IPocket.Withdrawal(user, recipient, burnAmount, burnAmount, burnAmount * Constants.DECIMAL_OFFSET);
         vm.expectEmit(true, true, false, true);
-        emit IVault.Withdrawn(user, pocketId, recipient, burnAmount, burnAmount);
+        emit IVault.Withdrawn(user, pocketId, recipient, burnAmount, burnAmount * Constants.DECIMAL_OFFSET);
         vm.prank(user);
         vault.withdraw(pocketId, burnAmount, recipient);
     }
 
     function test_ShouldBeAbleToWithdrawWhenPocketIsDisabled(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 mintAmount = bound(amount, 1, 1e38 - 1);
-        uint256 depositAmount = bound(amount, mintAmount, 1e38 - 1);
-        deposit(user, depositAmount);
+        uint256 mintAmount = bound(amount, 1, 1e35 - 3);
+        uint256 depositAmount = deposit(user, amount, mintAmount + 1, 1e35 - 1);
         vm.prank(user);
         vault.mint(pocketId, mintAmount);
-        uint256 burnAmount = bound(amount, 0, depositAmount - mintAmount);
+        uint256 burnAmount = bound(amount, 1, depositAmount - mintAmount);
         address recipient = makeAddr("recipient");
         vault.disablePocket(pocketId);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pocket), recipient, burnAmount);
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Withdrawal(user, recipient, burnAmount, burnAmount, burnAmount);
+        emit IPocket.Withdrawal(user, recipient, burnAmount, burnAmount, burnAmount * Constants.DECIMAL_OFFSET);
         vm.expectEmit(true, true, false, true);
-        emit IVault.Withdrawn(user, pocketId, recipient, burnAmount, burnAmount);
+        emit IVault.Withdrawn(user, pocketId, recipient, burnAmount, burnAmount * Constants.DECIMAL_OFFSET);
         vm.prank(user);
         vault.withdraw(pocketId, burnAmount, recipient);
     }
@@ -495,7 +498,7 @@ contract WithdrawalTest is PocketSetup {
         uint256 amount = 100 ether;
         deposit(user, amount);
         vm.prank(user);
-        vault.mint(pocketId, amount / 10);
+        vault.mint(pocketId, amount * 1e10 / 10);
         timestamp = uint32(bound(timestamp, block.timestamp + 1, type(uint32).max));
         vm.warp(timestamp);
         uint256 outstandingInterest = vault.outstandingInterestOf(user, pocketId);
@@ -503,7 +506,7 @@ contract WithdrawalTest is PocketSetup {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pocket), feeRecipient, outstandingInterest);
         vm.prank(user);
-        vault.withdraw(pocketId, 0, user);
+        vault.withdraw(pocketId, 1, user);
     }
 }
 
@@ -523,8 +526,9 @@ contract BurnTest is PocketSetup {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 depositAmount = deposit(user, amount);
         vm.prank(user);
-        vault.mint(pocketId, depositAmount);
-        uint256 burnAmount = bound(uint256(keccak256(abi.encode(amount))), 0, depositAmount);
+        uint256 mintAmount = depositAmount * 1e10;
+        vault.mint(pocketId, mintAmount);
+        uint256 burnAmount = bound(uint256(keccak256(abi.encode(amount))), 1, mintAmount);
         vm.expectEmit(true, true, false, true);
         emit IVault.Burned(user, pocketId, burnAmount);
         vm.prank(user);
@@ -547,9 +551,9 @@ contract LiquidationTest is PocketSetup {
 
     function test_RevertIf_LoanHealthyDuringLiquidation(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 depositAmount = deposit(user, amount);
+        uint256 depositAmount = deposit(user, amount, 3, 1e35 - 1);
         vm.prank(user);
-        uint256 mintAmount = bound(amount, 0, depositAmount == 0 ? 0 : depositAmount - 1);
+        uint256 mintAmount = bound(amount, 1, depositAmount - 1);
         vault.mint(pocketId, mintAmount);
         tCAPV2.mint(address(this), mintAmount);
         vm.expectRevert(IVault.LoanHealthy.selector);
@@ -559,34 +563,35 @@ contract LiquidationTest is PocketSetup {
     function test_RevertIf_HealthFactorIsBelowMinAfterLiquidation(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 depositAmount = deposit(user, amount);
-        vm.assume(depositAmount > 1e8);
+        vm.assume(depositAmount > 1e4 && depositAmount < 1e20);
         vm.prank(user);
         uint64 penalty = 0.05e18;
-        uint256 mintAmount = depositAmount * 1e18 / (1e18 + penalty);
+        uint256 mintAmount = depositAmount * 1e10 * 1e18 / (1e18 + penalty * 5);
         vault.mint(pocketId, mintAmount);
         vault.updateLiquidationParams(IVault.LiquidationParams({threshold: 1.5e18, penalty: penalty, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18}));
+        uint256 amountLiquidated = mintAmount * 6 / 10;
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.HEALTH_FACTOR_BELOW_MINIMUM));
-        vault.liquidate(user, pocketId, mintAmount / 2);
+        vault.liquidate(user, pocketId, amountLiquidated);
     }
 
     function test_RevertIf_HealthFactorIsAboveMaxAfterLiquidation(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
         uint256 depositAmount = deposit(user, amount);
-        vm.assume(depositAmount > 1e8 && depositAmount < 1e25);
+        vm.assume(depositAmount > 1e4 && depositAmount < 1e20);
         vm.prank(user);
-        vault.mint(pocketId, depositAmount);
+        uint256 mintAmount = depositAmount * 1e10;
+        vault.mint(pocketId, mintAmount);
         feedTCAP.setMultiplier(9000);
         vault.updateLiquidationParams(IVault.LiquidationParams({threshold: 1.2e18, penalty: 0, minHealthFactor: 0.1e18, maxHealthFactor: 0.3e18}));
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.HEALTH_FACTOR_ABOVE_MAXIMUM));
-        vault.liquidate(user, pocketId, depositAmount * 9 / 10);
+        vault.liquidate(user, pocketId, mintAmount * 9 / 10);
     }
 
     function test_ShouldBeAbleToLiquidate(address user, uint256 amount) public {
         vm.assume(user != address(0) && user != address(vaultProxyAdmin));
-        uint256 depositAmount = deposit(user, amount);
-        vm.assume(depositAmount > 0);
+        uint256 depositAmount = deposit(user, amount, 1, 1e28);
         vm.prank(user);
-        uint256 mintAmount = bound(amount, 1, depositAmount);
+        uint256 mintAmount = bound(amount, 1, depositAmount * 1e10);
         vault.mint(pocketId, mintAmount);
         uint256 collateralValue = vault.collateralValueOfUser(user, pocketId);
         uint256 mintValue = vault.mintedValueOf(mintAmount);

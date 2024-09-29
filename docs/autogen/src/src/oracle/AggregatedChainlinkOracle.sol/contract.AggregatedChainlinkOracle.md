@@ -1,5 +1,5 @@
 # AggregatedChainlinkOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/oracle/AggregatedChainlinkOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/55fee5686407b0eff65f8c90731b3d51888021cf/src/oracle/AggregatedChainlinkOracle.sol)
 
 **Inherits:**
 [BaseOracleUSD](/src/oracle/BaseOracleUSD.sol/abstract.BaseOracleUSD.md)
@@ -34,6 +34,6 @@ constructor(address feed_, address token) BaseOracleUSD(token);
 
 
 ```solidity
-function latestPrice() public view virtual override returns (uint256);
+function latestPrice(bool checkStaleness) public view virtual override returns (uint256);
 ```
 

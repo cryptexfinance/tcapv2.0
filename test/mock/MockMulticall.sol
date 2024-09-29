@@ -45,14 +45,6 @@ contract MockMulticall is Multicall {
         tuple = Tuple({a: a, b: b});
     }
 
-    function payableStoresMsgValue() external payable {
-        msgValue = msg.value;
-    }
-
-    function payableStoresMsgValueDouble() external payable {
-        msgValueDouble = 2 * msg.value;
-    }
-
     function returnSender() external view returns (address) {
         return msg.sender;
     }

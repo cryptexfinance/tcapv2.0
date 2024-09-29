@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IPocket, BasePocket} from "./BasePocket.sol";
+import {BasePocket} from "./BasePocket.sol";
 import {IVersioned} from "../interface/IVersioned.sol";
 import {IPool} from "@aave/interfaces/IPool.sol";
 import {IAaveV3Pocket} from "../interface/pockets/IAaveV3Pocket.sol";
@@ -11,26 +11,36 @@ import {IAaveV3Pocket} from "../interface/pockets/IAaveV3Pocket.sol";
 contract AaveV3Pocket is BasePocket, IAaveV3Pocket {
     IPool public immutable POOL;
 
-    constructor(address vault_, address underlyingToken_, address overlyingToken_, address aavePool) BasePocket(vault_, underlyingToken_, overlyingToken_) {
+    constructor(address vault_, address underlyingToken_, address aavePool)
+        BasePocket(vault_, underlyingToken_, IPool(aavePool).getReserveData(underlyingToken_).aTokenAddress)
+    {
         POOL = IPool(aavePool);
+        require(address(OVERLYING_TOKEN) != address(0));
+    }
+
+    function initialize() public override initializer {
+        UNDERLYING_TOKEN.approve(address(POOL), type(uint256).max);
     }
 
     /// @dev deposits underlying token into Aave v3, aTokens are deposited into this pocket
     function _onDeposit(uint256 amountUnderlying) internal override returns (uint256 amountOverlying) {
-        UNDERLYING_TOKEN.approve(address(POOL), amountUnderlying);
-        POOL.deposit(address(UNDERLYING_TOKEN), amountUnderlying, address(this), 0);
+        POOL.supply(address(UNDERLYING_TOKEN), amountUnderlying, address(this), 0);
         return amountUnderlying;
     }
 
     /// @dev redeems aTokens with Aave v3, underlying token is returned to user
     function _onWithdraw(uint256 amountOverlying, address recipient) internal override returns (uint256 amountUnderlying) {
         if (amountOverlying == 0) return 0;
-        POOL.withdraw(address(UNDERLYING_TOKEN), amountOverlying, recipient);
+        uint256 amountWithdrawn = POOL.withdraw(address(UNDERLYING_TOKEN), amountOverlying, recipient);
+        // https://github.com/code-423n4/2022-06-connext-findings/issues/181
+        assert(amountWithdrawn == amountOverlying);
         return amountOverlying;
     }
 
     function _balanceOf(address user) internal view override returns (uint256) {
-        return sharesOf(user) * OVERLYING_TOKEN.balanceOf(address(this)) / totalShares();
+        uint256 totalShares_ = totalShares();
+        if (totalShares_ == 0) return 0;
+        return sharesOf(user) * OVERLYING_TOKEN.balanceOf(address(this)) / totalShares_;
     }
 
     function _totalBalance() internal view override returns (uint256) {

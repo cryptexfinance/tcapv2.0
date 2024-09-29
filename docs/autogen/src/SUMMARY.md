@@ -12,6 +12,7 @@
     - [IVersioned](src/interface/IVersioned.sol/interface.IVersioned.md)
   - [❱ lib](src/lib/README.md)
     - [Constants](src/lib/Constants.sol/library.Constants.md)
+    - [Roles](src/lib/Constants.sol/library.Roles.md)
     - [FeeCalculatorLib](src/lib/FeeCalculatorLib.sol/library.FeeCalculatorLib.md)
     - [LiquidationLib](src/lib/LiquidationLib.sol/library.LiquidationLib.md)
     - [Multicall](src/lib/Multicall.sol/abstract.Multicall.md)

@@ -35,10 +35,10 @@ contract MockFeed is AggregatorV3Interface {
     }
 
     function getRoundData(uint80) external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
-        return (0, int256(_answer * priceMultiplier / DENOMINATOR), 0, 0, 0);
+        return (0, int256(_answer * priceMultiplier / DENOMINATOR), 0, block.timestamp, 0);
     }
 
     function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
-        return (0, int256(_answer * priceMultiplier / DENOMINATOR), 0, 0, 0);
+        return (0, int256(_answer * priceMultiplier / DENOMINATOR), 0, block.timestamp, 0);
     }
 }

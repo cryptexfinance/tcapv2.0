@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 
-import {Vault, IVault, FeeCalculatorLib} from "../../src/lib/FeeCalculatorLib.sol";
+import {Vault, FeeCalculatorLib} from "../../src/lib/FeeCalculatorLib.sol";
+import {IVault} from "../../src/interface/IVault.sol";
 
 abstract contract Uninitialized is Test {
     using FeeCalculatorLib for Vault.MintData;

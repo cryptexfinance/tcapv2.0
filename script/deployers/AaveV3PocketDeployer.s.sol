@@ -16,15 +16,15 @@ abstract contract AaveV3PocketDeployer is Script {
     ProxyAdmin internal aaveV3PocketProxyAdmin;
     address internal aaveV3PocketImplementation;
 
-    function deployAaveV3PocketTransparent(address proxyAdminOwner, address vault_, address underlyingToken_, address overlyingToken_, address aavePool)
+    function deployAaveV3PocketTransparent(address proxyAdminOwner, address vault_, address underlyingToken_, address aavePool)
         internal
         returns (address implementation, address proxyAdmin, address proxy)
     {
-        bytes memory initData = abi.encodeCall(BasePocket.initialize, ());
+        bytes memory initData = abi.encodeCall(AaveV3Pocket.initialize, ());
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-        aaveV3PocketImplementation = address(new AaveV3Pocket(vault_, underlyingToken_, overlyingToken_, aavePool));
+        aaveV3PocketImplementation = address(new AaveV3Pocket(vault_, underlyingToken_, aavePool));
         aaveV3Pocket = AaveV3Pocket(address(new TransparentUpgradeableProxy(aaveV3PocketImplementation, proxyAdminOwner, initData)));
 
         vm.stopBroadcast();
@@ -35,12 +35,9 @@ abstract contract AaveV3PocketDeployer is Script {
         return (aaveV3PocketImplementation, address(aaveV3PocketProxyAdmin), address(aaveV3Pocket));
     }
 
-    function deployAaveV3PocketImplementation(address vault_, address underlyingToken_, address overlyingToken_, address aavePool)
-        internal
-        returns (address implementation)
-    {
+    function deployAaveV3PocketImplementation(address vault_, address underlyingToken_, address aavePool) internal returns (address implementation) {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-        implementation = address(new AaveV3Pocket(vault_, underlyingToken_, overlyingToken_, aavePool));
+        implementation = address(new AaveV3Pocket(vault_, underlyingToken_, aavePool));
         vm.stopBroadcast();
     }
 }

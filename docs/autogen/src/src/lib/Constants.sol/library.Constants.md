@@ -1,5 +1,5 @@
 # Constants
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/lib/Constants.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/50c7925a6c3f309de1ec1ac1c16e55792a14efef/src/lib/Constants.sol)
 
 
 ## State Variables
@@ -42,6 +42,29 @@ uint64 internal constant MAX_POST_LIQUIDATION_HEALTH_FACTOR = 1e18;
 
 ```solidity
 uint256 internal constant MAX_FEE = 10_000;
+```
+
+
+### TCAP_DECIMALS
+
+```solidity
+uint8 internal constant TCAP_DECIMALS = 18;
+```
+
+
+### DIVISOR
+
+```solidity
+uint256 internal constant DIVISOR = 1e10;
+```
+
+
+### DECIMAL_OFFSET
+*multiply pocket shares with a decimal offset to mitigate inflation attack*
+
+
+```solidity
+uint256 internal constant DECIMAL_OFFSET = 1e6;
 ```
 
 

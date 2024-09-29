@@ -5,6 +5,7 @@ import {ERC20Upgradeable as ERC20} from "@openzeppelin/contracts-upgradeable/tok
 import {AccessControlUpgradeable as AccessControl} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ITCAPV2, IVersioned} from "./interface/ITCAPV2.sol";
 import {IOracle} from "./interface/IOracle.sol";
+import {Roles} from "./lib/Constants.sol";
 
 /// @title TCAP v2
 /// @notice TCAP v2 is an index token that is pegged to the entire crypto market cap
@@ -17,11 +18,6 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
 
     // keccak256(abi.encode(uint256(keccak256("tcapv2.storage.main")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant TCAPV2StorageLocation = 0x49c710835f557391deaa6abce7163dc90464df5e070a25601335cdac43861e00;
-
-    bytes32 public constant VAULT_ROLE = keccak256("VAULT_ROLE");
-    bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
-
-    uint256 public constant DIVISOR = 1e10;
 
     function _getTCAPV2Storage() private pure returns (TCAPV2Storage storage $) {
         assembly {
@@ -40,13 +36,13 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     }
 
     /// @inheritdoc ITCAPV2
-    function setOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE) {
+    function setOracle(address newOracle) external onlyRole(Roles.ORACLE_SETTER_ROLE) {
         if (IOracle(newOracle).asset() != address(this)) revert IOracle.InvalidOracle();
         _setOracle(newOracle);
     }
 
     /// @inheritdoc ITCAPV2
-    function mint(address to, uint256 amount) external onlyRole(VAULT_ROLE) {
+    function mint(address to, uint256 amount) external onlyRole(Roles.VAULT_ROLE) {
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         $._mintedAmounts[msg.sender] += amount;
         _mint(to, amount);
@@ -54,7 +50,7 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     }
 
     /// @inheritdoc ITCAPV2
-    function burn(address from, uint256 amount) external onlyRole(VAULT_ROLE) {
+    function burn(address from, uint256 amount) external onlyRole(Roles.VAULT_ROLE) {
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         if (amount > $._mintedAmounts[msg.sender]) revert BalanceExceeded(msg.sender);
         _burn(from, amount);
@@ -64,7 +60,6 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
 
     /// @inheritdoc ITCAPV2
     function mintedAmount(address vault) external view returns (uint256) {
-        // TODO: add mint cap?
         TCAPV2Storage storage $ = _getTCAPV2Storage();
         return $._mintedAmounts[vault];
     }
@@ -78,7 +73,7 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     /// @inheritdoc ITCAPV2
     function latestPrice() public view returns (uint256) {
         TCAPV2Storage storage $ = _getTCAPV2Storage();
-        return $.oracle.latestPrice();
+        return $.oracle.latestPrice(false);
     }
 
     /// @inheritdoc ITCAPV2

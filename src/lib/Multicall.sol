@@ -7,14 +7,14 @@ import {IMulticall} from "../interface/IMulticall.sol";
 /// @notice Enables calling multiple methods in a single call to the contract
 abstract contract Multicall is IMulticall {
     /// @inheritdoc IMulticall
-    function multicall(bytes[] calldata data) public payable override returns (bytes[] memory results) {
+    function multicall(bytes[] calldata data) external override returns (bytes[] memory results) {
         results = new bytes[](data.length);
         for (uint256 i = 0; i < data.length; i++) {
             (bool success, bytes memory result) = address(this).delegatecall(data[i]);
 
             if (!success) {
                 // bubble up the revert reason
-                assembly {
+                assembly ("memory-safe") {
                     revert(add(result, 0x20), mload(result))
                 }
             }

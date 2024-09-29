@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/55fee5686407b0eff65f8c90731b3d51888021cf/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -12,34 +12,6 @@ Vaults manage deposits of collateral and mint TCAP tokens
 
 ```solidity
 bytes32 private constant VaultStorageLocation = 0xead32f79207e43129359e4c6890b619e37e73a4cc1d61050c081a5aea1b4df00;
-```
-
-
-### POCKET_SETTER_ROLE
-
-```solidity
-bytes32 public constant POCKET_SETTER_ROLE = keccak256("POCKET_SETTER_ROLE");
-```
-
-
-### FEE_SETTER_ROLE
-
-```solidity
-bytes32 public constant FEE_SETTER_ROLE = keccak256("FEE_SETTER_ROLE");
-```
-
-
-### ORACLE_SETTER_ROLE
-
-```solidity
-bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
-```
-
-
-### LIQUIDATION_SETTER_ROLE
-
-```solidity
-bytes32 public constant LIQUIDATION_SETTER_ROLE = keccak256("LIQUIDATION_SETTER_ROLE");
 ```
 
 
@@ -64,6 +36,13 @@ IPermit2 private immutable PERMIT2;
 ```
 
 
+### COLLATERAL_DECIMALS
+
+```solidity
+uint8 private immutable COLLATERAL_DECIMALS;
+```
+
+
 ## Functions
 ### ensureLoanHealthy
 
@@ -71,7 +50,7 @@ IPermit2 private immutable PERMIT2;
 
 
 ```solidity
-modifier ensureLoanHealthy(address user, uint96 pocketId);
+modifier ensureLoanHealthy(address user, uint96 pocketId, bool checkStaleness);
 ```
 
 ### constructor
@@ -105,7 +84,7 @@ Adds a new pocket to the vault
 
 
 ```solidity
-function addPocket(IPocket pocket) external onlyRole(POCKET_SETTER_ROLE) returns (uint96 pocketId);
+function addPocket(IPocket pocket) external onlyRole(Roles.POCKET_SETTER_ROLE) returns (uint96 pocketId);
 ```
 **Parameters**
 
@@ -128,7 +107,7 @@ Disables a pocket to be used for deposits
 
 
 ```solidity
-function disablePocket(uint96 pocketId) external onlyRole(POCKET_SETTER_ROLE);
+function disablePocket(uint96 pocketId) external onlyRole(Roles.POCKET_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -145,7 +124,7 @@ Updates the interest rate of the vault
 
 
 ```solidity
-function updateInterestRate(uint16 fee) external onlyRole(FEE_SETTER_ROLE);
+function updateInterestRate(uint16 fee) external onlyRole(Roles.FEE_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -162,7 +141,7 @@ Updates the fee recipient of the vault
 
 
 ```solidity
-function updateFeeRecipient(address newFeeRecipient) external onlyRole(FEE_SETTER_ROLE);
+function updateFeeRecipient(address newFeeRecipient) external onlyRole(Roles.FEE_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -179,7 +158,7 @@ Updates the oracle of the collateral
 
 
 ```solidity
-function updateOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE);
+function updateOracle(address newOracle) external onlyRole(Roles.ORACLE_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -196,7 +175,7 @@ Updates the liquidation params of the vault
 
 
 ```solidity
-function updateLiquidationParams(LiquidationParams calldata newParams) external onlyRole(LIQUIDATION_SETTER_ROLE);
+function updateLiquidationParams(LiquidationParams calldata newParams) external onlyRole(Roles.LIQUIDATION_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -233,7 +212,7 @@ Deposits collateral into a pocket using a permit2 signature transfer
 
 
 ```solidity
-function depositWithPermit(uint96 pocketId, uint256 amount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+function depositWithPermit(uint96 pocketId, uint256 amount, IPermit2.PermitTransferFrom calldata permit, bytes calldata signature)
     external
     returns (uint256 shares);
 ```
@@ -261,7 +240,7 @@ Withdraws collateral from a pocket
 
 
 ```solidity
-function withdraw(uint96 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId) returns (uint256 shares);
+function withdraw(uint96 pocketId, uint256 amount, address to) external ensureLoanHealthy(msg.sender, pocketId, false) returns (uint256 shares);
 ```
 **Parameters**
 
@@ -286,7 +265,7 @@ Mints TCAP tokens
 
 
 ```solidity
-function mint(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId);
+function mint(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId, true);
 ```
 **Parameters**
 
@@ -337,13 +316,51 @@ function liquidate(address user, uint96 pocketId, uint256 burnAmount) external r
 |`liquidationReward`|`uint256`|The amount of collateral liquidated and returned to the liquidator|
 
 
+### takeFee
+
+Takes the accrued fees from a user and sends them to the fee recipient
+
+
+```solidity
+function takeFee(address user, uint96 pocketId) external;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user to take the fees from|
+|`pocketId`|`uint96`|The id of the pocket where the collateral is stored|
+
+
+### collateralValueOfUser
+
+Returns the value of the collateral of a user
+
+
+```solidity
+function collateralValueOfUser(address user, uint96 pocketId) external view returns (uint256);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`user`|`address`|The address of the user|
+|`pocketId`|`uint96`|The id of the pocket|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|The value of the collateral of the user|
+
+
 ### healthFactor
 
 Returns the health factor of a user
 
 
 ```solidity
-function healthFactor(address user, uint96 pocketId) public view returns (uint256);
+function healthFactor(address user, uint96 pocketId) external view returns (uint256);
 ```
 **Parameters**
 
@@ -378,28 +395,6 @@ function collateralValueOf(uint256 amount) public view returns (uint256);
 |Name|Type|Description|
 |----|----|-----------|
 |`<none>`|`uint256`|The value of the collateral|
-
-
-### collateralValueOfUser
-
-Returns the value of the collateral of a user
-
-
-```solidity
-function collateralValueOfUser(address user, uint96 pocketId) public view returns (uint256);
-```
-**Parameters**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`user`|`address`|The address of the user|
-|`pocketId`|`uint96`|The id of the pocket|
-
-**Returns**
-
-|Name|Type|Description|
-|----|----|-----------|
-|`<none>`|`uint256`|The value of the collateral of the user|
 
 
 ### mintedValueOf
@@ -515,7 +510,7 @@ function outstandingInterestOf(address user, uint96 pocketId) public view return
 
 
 ```solidity
-function latestPrice() public view returns (uint256);
+function latestPrice() external view returns (uint256);
 ```
 **Returns**
 
@@ -644,6 +639,27 @@ function _updateOracle(address newOracle) internal;
 function _getPocket(uint96 pocketId) internal view returns (IPocket);
 ```
 
+### _latestPrice
+
+
+```solidity
+function _latestPrice(bool checkStaleness) internal view returns (uint256);
+```
+
+### _healthFactor
+
+
+```solidity
+function _healthFactor(address user, uint96 pocketId, bool checkStaleness) internal view returns (uint256);
+```
+
+### _balanceOf
+
+
+```solidity
+function _balanceOf(address user, uint96 pocketId) internal view returns (uint256);
+```
+
 ### _toMintId
 
 
@@ -655,7 +671,7 @@ function _toMintId(address user, uint96 pocketId) internal pure returns (uint256
 
 
 ```solidity
-function version() public pure returns (string memory);
+function version() external pure returns (string memory);
 ```
 **Returns**
 
@@ -669,9 +685,6 @@ function version() public pure returns (string memory);
 
 ```solidity
 struct Deposit {
-    address user;
-    uint96 pocketId;
-    bool enabled;
     uint256 mintAmount;
     uint256 feeIndex;
     uint256 accruedInterest;

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IVault} from "../interface/IVault.sol";
 import {Vault} from "../Vault.sol";
 import {Constants} from "./Constants.sol";
 
