@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/f0168f3fe66c1fba4fd70ffdcdc87287e8f0cb6a/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/e97625d3fa4c1e69cd468f56ea73be8576094941/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -281,7 +281,7 @@ Burns TCAP tokens
 
 
 ```solidity
-function burn(uint96 pocketId, uint256 amount) external;
+function burn(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId, false);
 ```
 **Parameters**
 

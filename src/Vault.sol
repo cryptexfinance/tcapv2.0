@@ -176,7 +176,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function burn(uint96 pocketId, uint256 amount) external {
+    function burn(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId, false) {
         if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         MintData storage $ = _getVaultStorage().mintData;
         uint256 mintId = _toMintId(msg.sender, pocketId);
