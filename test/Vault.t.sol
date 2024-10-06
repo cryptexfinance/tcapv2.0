@@ -198,6 +198,7 @@ contract ManagementTest is Permitted {
     }
 
     function test_ShouldUpdateFeeRecipient(address feeRecipient_) public {
+        vm.assume(feeRecipient_ != address(0));
         vm.expectEmit(true, true, false, true);
         emit IVault.FeeRecipientUpdated(feeRecipient_);
         vault.updateFeeRecipient(feeRecipient_);

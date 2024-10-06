@@ -331,7 +331,7 @@ contract Vault is IVault, AccessControl, Multicall {
         if (interest > collateral) interest = collateral;
         VaultStorage storage $ = _getVaultStorage();
         address feeRecipient_ = $.feeRecipient;
-        if (interest != 0 && feeRecipient_ != address(0)) {
+        if (interest != 0) {
             $.mintData.resetInterestOf(_toMintId(user, pocketId));
             pocket.withdraw(user, interest, feeRecipient_);
             emit FeeCollected(user, pocketId, feeRecipient_, interest);
@@ -346,6 +346,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     function _updateFeeRecipient(address newFeeRecipient) internal {
+        if (newFeeRecipient == address(0)) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         VaultStorage storage $ = _getVaultStorage();
         $.feeRecipient = newFeeRecipient;
         emit FeeRecipientUpdated(newFeeRecipient);
