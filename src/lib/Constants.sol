@@ -24,6 +24,8 @@ library Roles {
     bytes32 public constant POCKET_SETTER_ROLE = 0xcbd69888d9fba90fe49a0c7a1d66c35e381e4ebf3a66968c85c5beacc25db59a;
     // keccak256("FEE_SETTER_ROLE")
     bytes32 public constant FEE_SETTER_ROLE = 0xe6ad9a47fbda1dc18de1eb5eeb7d935e5e81b4748f3cfc61e233e64f88182060;
+    // keccak256("FEE_COLLECTOR_ROLE")
+    bytes32 public constant FEE_COLLECTOR_ROLE = 0x2dca0f5ce7e75a4b43fe2b0d6f5d0b7a2bf92ecf89f8f0aa17b8308b67038821;
     // keccak256("LIQUIDATION_SETTER_ROLE")
     bytes32 public constant LIQUIDATION_SETTER_ROLE = 0xba474fc2b8347e255f10252fdae69399bac572751768da2e97a282acc34401ea;
 }

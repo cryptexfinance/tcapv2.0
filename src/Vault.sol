@@ -239,7 +239,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function takeFee(address user, uint96 pocketId) external {
+    function takeFee(address user, uint96 pocketId) external onlyRole(Roles.FEE_COLLECTOR_ROLE) {
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
         if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         _takeFee(pocket, user, pocketId);

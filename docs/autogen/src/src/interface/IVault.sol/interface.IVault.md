@@ -1,5 +1,5 @@
 # IVault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/c8b18bb160f52905d87ef82a6a1c3fee16403c7f/src/interface/IVault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/f0168f3fe66c1fba4fd70ffdcdc87287e8f0cb6a/src/interface/IVault.sol)
 
 **Inherits:**
 IAccessControl, [IMulticall](/src/interface/IMulticall.sol/interface.IMulticall.md), [IVersioned](/src/interface/IVersioned.sol/interface.IVersioned.md)
@@ -255,6 +255,8 @@ function liquidate(address user, uint96 pocketId, uint256 burnAmount) external r
 ### takeFee
 
 Takes the accrued fees from a user and sends them to the fee recipient
+
+*Only callable by the fee setter*
 
 
 ```solidity
