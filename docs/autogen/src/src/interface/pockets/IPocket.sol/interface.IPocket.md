@@ -1,5 +1,5 @@
 # IPocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/interface/pockets/IPocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/718e8617155688d408d1f4ef1bba34916c771722/src/interface/pockets/IPocket.sol)
 
 **Inherits:**
 [IVersioned](/src/interface/IVersioned.sol/interface.IVersioned.md)
@@ -207,5 +207,13 @@ Thrown when a user tries to burn more shares than they own
 
 ```solidity
 error InsufficientFunds();
+```
+
+### ZeroSharesMinted
+Thrown when zero shares are minted
+
+
+```solidity
+error ZeroSharesMinted();
 ```
 

@@ -55,6 +55,7 @@ contract BasePocket is IPocket, Initializable {
         } else {
             shares = amountOverlying * Constants.DECIMAL_OFFSET;
         }
+        if (shares == 0) revert ZeroSharesMinted();
         BasePocketStorage storage $ = _getBasePocketStorage();
         $.totalShares += shares;
         $.sharesOf[user] += shares;
