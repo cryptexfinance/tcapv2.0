@@ -1,12 +1,12 @@
 # BasePocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/495451d159fb10c010b98bdc7bc685a1a59dc8d3/src/pockets/BasePocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/300e3dc5cffa328fb9714b67c38745c3400cb13b/src/pockets/BasePocket.sol)
 
 **Inherits:**
 [IPocket](/src/interface/pockets/IPocket.sol/interface.IPocket.md), Initializable
 
-The base pocket stores all funds in this contract
+The base pocket implementation
 
-*assumes the underlying token is the same as the overlying token.*
+*@audit If the underlying token is different from the overlying token, the underlying token MUST be converted into the overlying token on deposit and the overlying token MUST be converted into the underlying token on withdrawal to avoid inflation attack vectors and ensure accurate accounting.*
 
 
 ## State Variables

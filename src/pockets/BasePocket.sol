@@ -3,16 +3,13 @@ pragma solidity 0.8.26;
 
 import {IPocket, IVault, IVersioned} from "../interface/pockets/IPocket.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeTransferLib} from "solady/src/utils/SafeTransferLib.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {Constants} from "../lib/Constants.sol";
 
 /// @title Base Pocket
-/// @notice The base pocket stores all funds in this contract
-/// @dev assumes the underlying token is the same as the overlying token.
-contract BasePocket is IPocket, Initializable {
-    using SafeTransferLib for address;
-
+/// @notice The base pocket implementation
+/// @dev @audit If the underlying token is different from the overlying token, the underlying token MUST be converted into the overlying token on deposit and the overlying token MUST be converted into the underlying token on withdrawal to avoid inflation attack vectors and ensure accurate accounting.
+abstract contract BasePocket is IPocket, Initializable {
     /// @custom:storage-location erc7201:tcapv2.pocket.base
     struct BasePocketStorage {
         uint256 totalShares;
@@ -100,24 +97,13 @@ contract BasePocket is IPocket, Initializable {
         return _totalBalance();
     }
 
-    function _onDeposit(uint256 amountUnderlying) internal virtual returns (uint256 amountOverlying) {
-        amountOverlying = amountUnderlying;
-    }
+    function _onDeposit(uint256 amountUnderlying) internal virtual returns (uint256 amountOverlying);
 
-    function _onWithdraw(uint256 amountOverlying, address recipient) internal virtual returns (uint256 amountUnderlying) {
-        amountUnderlying = amountOverlying;
-        address(UNDERLYING_TOKEN).safeTransfer(recipient, amountUnderlying);
-    }
+    function _onWithdraw(uint256 amountOverlying, address recipient) internal virtual returns (uint256 amountUnderlying);
 
-    function _balanceOf(address user) internal view virtual returns (uint256) {
-        uint256 totalShares_ = totalShares();
-        if (totalShares_ == 0) return 0;
-        return sharesOf(user) * OVERLYING_TOKEN.balanceOf(address(this)) / totalShares_;
-    }
+    function _balanceOf(address user) internal view virtual returns (uint256);
 
-    function _totalBalance() internal view virtual returns (uint256) {
-        return OVERLYING_TOKEN.balanceOf(address(this));
-    }
+    function _totalBalance() internal view virtual returns (uint256);
 
     /// @inheritdoc IVersioned
     function version() external pure virtual override returns (string memory) {

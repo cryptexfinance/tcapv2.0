@@ -1,8 +1,8 @@
 # AaveV3Pocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/cfd4479571dabebf4da5afd03c0fa4c7d96fd55b/src/pockets/AaveV3Pocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/300e3dc5cffa328fb9714b67c38745c3400cb13b/src/pockets/AaveV3Pocket.sol)
 
 **Inherits:**
-[BasePocket](/src/pockets/BasePocket.sol/contract.BasePocket.md), [IAaveV3Pocket](/src/interface/pockets/IAaveV3Pocket.sol/interface.IAaveV3Pocket.md)
+[BasePocket](/src/pockets/BasePocket.sol/abstract.BasePocket.md), [IAaveV3Pocket](/src/interface/pockets/IAaveV3Pocket.sol/interface.IAaveV3Pocket.md)
 
 The Aave v3 Pocket deposits funds into Aave v3 to earn interest
 
