@@ -8,9 +8,11 @@ contract MockFeed is AggregatorV3Interface {
     uint256 internal _answer;
     uint256 priceMultiplier = 10_000;
     uint8 internal _feedDecimals = 8;
+    address public aggregator;
 
     constructor(uint256 price) {
         _answer = price;
+        aggregator = address(new Aggregator());
     }
 
     function setPrice(uint256 price) external {
@@ -40,5 +42,15 @@ contract MockFeed is AggregatorV3Interface {
 
     function latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound) {
         return (0, int256(_answer * priceMultiplier / DENOMINATOR), 0, block.timestamp, 0);
+    }
+}
+
+contract Aggregator {
+    function minAnswer() external pure returns (int192) {
+        return 1;
+    }
+
+    function maxAnswer() external pure returns (int192) {
+        return type(int192).max;
     }
 }

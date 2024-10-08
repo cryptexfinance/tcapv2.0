@@ -1,5 +1,5 @@
 # AggregatedChainlinkOracle
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6fb291c7e6c372c076c9cd314a2348fadd32af09/src/oracle/AggregatedChainlinkOracle.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/9f5c04f0c486dce359a7781c94ffd3096596f1da/src/oracle/AggregatedChainlinkOracle.sol)
 
 **Inherits:**
 [BaseOracleUSD](/src/oracle/BaseOracleUSD.sol/abstract.BaseOracleUSD.md)
@@ -12,6 +12,20 @@
 
 ```solidity
 AggregatorV3Interface public immutable feed;
+```
+
+
+### MIN_AMOUNT
+
+```solidity
+int256 private immutable MIN_AMOUNT;
+```
+
+
+### MAX_AMOUNT
+
+```solidity
+int256 private immutable MAX_AMOUNT;
 ```
 
 

@@ -15,7 +15,7 @@ contract DefaultPocket is BasePocket {
 
     constructor(address vault_, address underlyingToken_) BasePocket(vault_, underlyingToken_, underlyingToken_) {}
 
-    function initialize() public override initializer {}
+    function initialize() public initializer {}
 
     function _onDeposit(uint256 amountUnderlying) internal pure override returns (uint256 amountOverlying) {
         amountOverlying = amountUnderlying;

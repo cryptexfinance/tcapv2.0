@@ -1,5 +1,5 @@
 # DefaultPocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/300e3dc5cffa328fb9714b67c38745c3400cb13b/src/pockets/DefaultPocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/9f5c04f0c486dce359a7781c94ffd3096596f1da/src/pockets/DefaultPocket.sol)
 
 **Inherits:**
 [BasePocket](/src/pockets/BasePocket.sol/abstract.BasePocket.md)
@@ -21,7 +21,7 @@ constructor(address vault_, address underlyingToken_) BasePocket(vault_, underly
 
 
 ```solidity
-function initialize() public override initializer;
+function initialize() public initializer;
 ```
 
 ### _onDeposit

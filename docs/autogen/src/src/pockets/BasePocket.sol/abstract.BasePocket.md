@@ -1,5 +1,5 @@
 # BasePocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/300e3dc5cffa328fb9714b67c38745c3400cb13b/src/pockets/BasePocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/9f5c04f0c486dce359a7781c94ffd3096596f1da/src/pockets/BasePocket.sol)
 
 **Inherits:**
 [IPocket](/src/interface/pockets/IPocket.sol/interface.IPocket.md), Initializable
@@ -44,13 +44,6 @@ IERC20 public immutable OVERLYING_TOKEN;
 
 ```solidity
 constructor(address vault_, address underlyingToken_, address overlyingToken_);
-```
-
-### initialize
-
-
-```solidity
-function initialize() public virtual initializer;
 ```
 
 ### _getBasePocketStorage
