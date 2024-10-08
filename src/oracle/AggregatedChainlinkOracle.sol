@@ -9,10 +9,13 @@ import {AggregatorV3Interface} from "@chainlink/interfaces/feeds/AggregatorV3Int
 contract AggregatedChainlinkOracle is BaseOracleUSD {
     AggregatorV3Interface public immutable feed;
     uint256 public immutable feedDecimals;
+    uint256 public immutable stalenessDelay;
 
-    constructor(address feed_, address token) BaseOracleUSD(token) {
+    /// @dev the staleness delay should be set relative to the heartbeat of the feed
+    constructor(address feed_, address token, uint256 stalenessDelay_) BaseOracleUSD(token) {
         feed = AggregatorV3Interface(feed_);
         feedDecimals = feed.decimals();
+        stalenessDelay = stalenessDelay_;
     }
 
     function latestPrice(bool checkStaleness) public view virtual override returns (uint256) {
@@ -20,7 +23,7 @@ contract AggregatedChainlinkOracle is BaseOracleUSD {
         // @audit in case of a stale oracle do not revert because it would prevent users from withdrawing
         // @audit only check staleness during minting to ensure staleness of price doesn't allow for arbitrage
         if (checkStaleness) {
-            if (updatedAt < block.timestamp - 1 days) {
+            if (updatedAt < block.timestamp - stalenessDelay) {
                 revert StaleOracle();
             }
         }

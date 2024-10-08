@@ -8,7 +8,7 @@ import {Constants} from "../lib/Constants.sol";
 /// @title TCAP Target Oracle
 /// @dev Returns the target price of the TCAP token
 contract TCAPTargetOracle is AggregatedChainlinkOracle {
-    constructor(ITCAPV2 tcap, address feed_) AggregatedChainlinkOracle(feed_, address(tcap)) {}
+    constructor(ITCAPV2 tcap, address feed_, uint256 stalenessDelay_) AggregatedChainlinkOracle(feed_, address(tcap), stalenessDelay_) {}
 
     // @dev feed decimals cannot exceed 18
     function latestPrice(bool checkStaleness) public view virtual override returns (uint256) {

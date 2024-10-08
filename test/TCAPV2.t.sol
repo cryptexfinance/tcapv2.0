@@ -106,7 +106,7 @@ contract InitializedTest is Initialized {
     function test_RevertIf_OracleIsInvalid() public {
         MockFeed feed = new MockFeed(1e18);
         MockCollateral collateral = new MockCollateral();
-        AggregatedChainlinkOracle oracle = new AggregatedChainlinkOracle(address(feed), address(collateral));
+        AggregatedChainlinkOracle oracle = new AggregatedChainlinkOracle(address(feed), address(collateral), 1 days);
         vm.expectRevert(IOracle.InvalidOracle.selector);
         tCAPV2.setOracle(address(oracle));
     }
@@ -114,7 +114,7 @@ contract InitializedTest is Initialized {
     function test_ShouldBeAbleToSetOracle() public {
         // 3T USD * 8 decimals
         MockFeed feed = new MockFeed(3e12 * 1e8);
-        TCAPTargetOracle oracle = new TCAPTargetOracle(tCAPV2, address(feed));
+        TCAPTargetOracle oracle = new TCAPTargetOracle(tCAPV2, address(feed), 1 days);
         vm.expectEmit(true, true, false, true);
         emit ITCAPV2.OracleUpdated(address(oracle));
         tCAPV2.setOracle(address(oracle));

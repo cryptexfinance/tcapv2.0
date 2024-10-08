@@ -40,11 +40,11 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
         tCAPV2.grantRole(Roles.VAULT_ROLE, admin);
         uint256 collateralPrice = 1000;
         feedTCAP = new MockFeed(collateralPrice * Constants.DIVISOR * 1e8);
-        oracleTCAP = new TCAPTargetOracle(tCAPV2, address(feedTCAP));
+        oracleTCAP = new TCAPTargetOracle(tCAPV2, address(feedTCAP), 1 days);
         tCAPV2.setOracle(address(oracleTCAP));
 
         feed = new MockFeed(collateralPrice * 1e8);
-        oracle = new AggregatedChainlinkOracle(address(feed), address(collateral));
+        oracle = new AggregatedChainlinkOracle(address(feed), address(collateral), 1 days);
 
         IVault.LiquidationParams memory liquidationParams = IVault.LiquidationParams({threshold: 1e18, penalty: 0, minHealthFactor: 1, maxHealthFactor: 1e18});
 

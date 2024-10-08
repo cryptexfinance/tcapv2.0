@@ -35,7 +35,7 @@ contract TCAPDeployer {
         TCAPV2 tcap = TCAPV2(address(new TransparentUpgradeableProxy(implementation, proxyAdminOwner, initData)));
 
         TCAPV2(tcap).grantRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);
-        TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed));
+        TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed), 5 days);
         TCAPV2(tcap).setOracle(address(oracle));
         TCAPV2(tcap).grantRole(Roles.DEFAULT_ADMIN_ROLE, admin);
         TCAPV2(tcap).revokeRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);
