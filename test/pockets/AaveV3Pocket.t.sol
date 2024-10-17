@@ -4,10 +4,13 @@ pragma solidity 0.8.26;
 import "forge-std/Test.sol";
 import "test/util/TestHelpers.sol";
 
-import "script/deployers/AaveV3PocketDeployer.s.sol";
+import "../../script/deployers/AaveV3PocketDeployer.s.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
 import {IWETH9, IERC20} from "../interface/IWETH9.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {IPocket} from "../../src/interface/pockets/IPocket.sol";
+import {Constants} from "../../src/lib/Constants.sol";
+import {IPool} from "@aave/interfaces/IPool.sol";
 
 abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
     address POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
@@ -22,12 +25,11 @@ abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
             vm.createSelectFork(rpcUrl);
             forked = true;
             console2.log("Forked Ethereum mainnet");
+            address vault = makeAddr("vault");
+            aaveV3Pocket = AaveV3Pocket(deployAaveV3PocketImplementation(vault, address(underlyingToken), POOL_MAINNET));
         } catch {
             console2.log("Skipping forked tests, no infura key found. Add key to .env to run forked tests.");
         }
-
-        address vault = makeAddr("vault");
-        aaveV3Pocket = AaveV3Pocket(deployAaveV3PocketImplementation(vault, address(underlyingToken), address(overlyingAToken), POOL_MAINNET));
     }
 
     modifier onlyForked() {
@@ -43,8 +45,16 @@ abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
 abstract contract Initialized is Uninitialized {
     function setUp() public virtual override {
         super.setUp();
-        address admin = address(this);
-        deployAaveV3PocketTransparent(admin, address(this), address(underlyingToken), address(overlyingAToken), POOL_MAINNET);
+        if (forked) {
+            address admin = address(this);
+            deployAaveV3PocketTransparent(admin, address(this), address(underlyingToken), POOL_MAINNET);
+        }
+    }
+
+    function deposit(uint256 amount) internal {
+        vm.deal(address(this), amount);
+        underlyingToken.deposit{value: amount}();
+        underlyingToken.transfer(address(aaveV3Pocket), amount);
     }
 }
 
@@ -64,7 +74,7 @@ abstract contract Deposited is Initialized {
 }
 
 contract UninitializedTest is Uninitialized {
-    function test_InitialState() public {
+    function test_InitialState() public onlyForked {
         assertEq(aaveV3Pocket.totalShares(), 0);
         assertEq(address(aaveV3Pocket.VAULT()), makeAddr("vault"));
         assertEq(address(aaveV3Pocket.UNDERLYING_TOKEN()), address(underlyingToken));
@@ -73,7 +83,7 @@ contract UninitializedTest is Uninitialized {
         assertEq(aaveV3Pocket.version(), "1.0.0");
     }
 
-    function test_RevertsOnInitialization() public {
+    function test_RevertsOnInitialization() public onlyForked {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         aaveV3Pocket.initialize();
     }
@@ -88,6 +98,35 @@ contract InitializedTest is Initialized {
 }
 
 contract DepositTest is Initialized {
+    function test_ShouldMitigateInflationAttack(uint256 donationAmount, uint256 victimAmount) public {
+        uint256 dust = 1;
+        // maximum victim amount is 0.1 ether, if it is higher, the donation will trigger a supply cap error on aave
+        victimAmount = bound(victimAmount, 1, 0.1 ether);
+        // inflation attack donation amount is less than victim amount * 1e6. Subtract 1 additional wei due to aave rounding errors
+        uint256 donation = bound(donationAmount, victimAmount, victimAmount * 1e6 - 1 - 1);
+        assertEq(underlyingToken.balanceOf(address(aaveV3Pocket)), 0);
+        address attacker = makeAddr("attacker");
+
+        // transfer dust
+        deposit(dust);
+        aaveV3Pocket.registerDeposit(attacker, dust);
+
+        // donate overlying
+        vm.deal(address(this), donation);
+        underlyingToken.deposit{value: donation}();
+        underlyingToken.approve(POOL_MAINNET, donation);
+        IPool(POOL_MAINNET).supply(address(underlyingToken), donation, address(aaveV3Pocket), 0);
+        assertApproxEqAbs(overlyingAToken.balanceOf(address(aaveV3Pocket)), donation + dust, 1);
+
+        address victim = makeAddr("victim");
+        deposit(victimAmount);
+        aaveV3Pocket.registerDeposit(victim, victimAmount);
+        // ensure shares were minted to the victim
+        assertGt(aaveV3Pocket.sharesOf(victim), 0);
+        // ensure the victim's balance is equal to the amount deposited +- 1 wei due to rounding errors on aave
+        assertApproxEqAbs(aaveV3Pocket.balanceOf(victim), victimAmount, 1);
+    }
+
     function test_shouldMintInitialShares(uint256 amount) public onlyForked {
         amount = bound(amount, 1, 1000 ether);
         address user = makeAddr("alice");
@@ -95,10 +134,10 @@ contract DepositTest is Initialized {
         underlyingToken.deposit{value: amount}();
         underlyingToken.transfer(address(aaveV3Pocket), amount);
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Deposit(user, amount, amount, amount);
+        emit IPocket.Deposit(user, amount, amount, amount * Constants.DECIMAL_OFFSET);
         aaveV3Pocket.registerDeposit(user, amount);
-        assertEq(aaveV3Pocket.totalShares(), amount);
-        assertEq(aaveV3Pocket.sharesOf(user), amount);
+        assertEq(aaveV3Pocket.totalShares(), amount * Constants.DECIMAL_OFFSET);
+        assertEq(aaveV3Pocket.sharesOf(user), amount * Constants.DECIMAL_OFFSET);
         assertApproxEqAbs(aaveV3Pocket.balanceOf(user), amount, 1);
         assertApproxEqAbs(aaveV3Pocket.totalBalance(), amount, 1);
     }
@@ -112,20 +151,21 @@ contract WithdrawTest is Deposited {
         aaveV3Pocket.withdraw(user, shares, user);
     }
 
-    function test_shouldBurnShares(uint256 shares) public onlyForked {
+    function test_shouldBurnSharesAave(uint256 amount) public onlyForked {
         address user = makeAddr("alice");
         address recipient = makeAddr("recipient");
-        shares = bound(shares, 0, aaveV3Pocket.sharesOf(user));
+        amount = bound(amount, 0, aaveV3Pocket.balanceOf(user));
         uint256 totalSharesBefore = aaveV3Pocket.totalShares();
+        uint256 shares = amount * Constants.DECIMAL_OFFSET;
         uint256 sharesBefore = aaveV3Pocket.sharesOf(user);
         uint256 balanceRecipientBefore = underlyingToken.balanceOf(recipient);
         uint256 balancePocketBefore = overlyingAToken.balanceOf(address(aaveV3Pocket));
         vm.expectEmit(true, true, false, true);
-        emit IPocket.Withdrawal(user, recipient, shares, shares, shares);
-        aaveV3Pocket.withdraw(user, shares, recipient);
+        emit IPocket.Withdrawal(user, recipient, amount, amount, shares);
+        aaveV3Pocket.withdraw(user, amount, recipient);
         assertEq(aaveV3Pocket.totalShares(), totalSharesBefore - shares);
         assertEq(aaveV3Pocket.sharesOf(user), sharesBefore - shares);
-        assertEq(underlyingToken.balanceOf(recipient), balanceRecipientBefore + shares);
-        assertApproxEqAbs(overlyingAToken.balanceOf(address(aaveV3Pocket)), balancePocketBefore - shares, 1);
+        assertEq(underlyingToken.balanceOf(recipient), balanceRecipientBefore + amount);
+        assertApproxEqAbs(overlyingAToken.balanceOf(address(aaveV3Pocket)), balancePocketBefore - amount, 1);
     }
 }

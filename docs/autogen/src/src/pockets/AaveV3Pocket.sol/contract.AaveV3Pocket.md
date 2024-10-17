@@ -1,8 +1,8 @@
 # AaveV3Pocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/pockets/AaveV3Pocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/9f5c04f0c486dce359a7781c94ffd3096596f1da/src/pockets/AaveV3Pocket.sol)
 
 **Inherits:**
-[BasePocket](/src/pockets/BasePocket.sol/contract.BasePocket.md), [IAaveV3Pocket](/src/interface/pockets/IAaveV3Pocket.sol/interface.IAaveV3Pocket.md)
+[BasePocket](/src/pockets/BasePocket.sol/abstract.BasePocket.md), [IAaveV3Pocket](/src/interface/pockets/IAaveV3Pocket.sol/interface.IAaveV3Pocket.md)
 
 The Aave v3 Pocket deposits funds into Aave v3 to earn interest
 
@@ -20,7 +20,15 @@ IPool public immutable POOL;
 
 
 ```solidity
-constructor(address vault_, address underlyingToken_, address overlyingToken_, address aavePool) BasePocket(vault_, underlyingToken_, overlyingToken_);
+constructor(address vault_, address underlyingToken_, address aavePool)
+    BasePocket(vault_, underlyingToken_, IPool(aavePool).getReserveData(underlyingToken_).aTokenAddress);
+```
+
+### initialize
+
+
+```solidity
+function initialize() public initializer;
 ```
 
 ### _onDeposit

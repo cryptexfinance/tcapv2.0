@@ -9,24 +9,24 @@ import {AggregatedChainlinkOracle} from "../../src/oracle/AggregatedChainlinkOra
 import {TCAPTargetOracle} from "../../src/oracle/TCAPTargetOracle.sol";
 import {MockFeed} from "../mock/MockFeed.sol";
 import {MockCollateral} from "../mock/MockCollateral.sol";
-import "script/deployers/TCAPV2Deployer.s.sol";
+import "../../script/deployers/TCAPV2Deployer.s.sol";
+import {Constants} from "../../src/lib/Constants.sol";
 
 contract BaseOracleUSDTest is Test, TestHelpers, TCAPV2Deployer {
     function test_InitializeCorrectly() public {
         MockCollateral collateral = new MockCollateral();
         MockFeed feed = new MockFeed(1);
-        AggregatedChainlinkOracle oracle = new AggregatedChainlinkOracle(address(feed), address(collateral));
+        AggregatedChainlinkOracle oracle = new AggregatedChainlinkOracle(address(feed), address(collateral), 1 days);
         assertEq(address(oracle.feed()), address(feed));
         assertEq(oracle.feedDecimals(), feed.decimals());
         assertEq(address(oracle.asset()), address(collateral));
-        assertEq(oracle.assetDecimals(), collateral.decimals());
     }
 
     function test_InitializeTCAPTargetOracleCorrectly() public {
         deployTCAPV2Transparent(makeAddr("admin"), makeAddr("admin"));
         uint256 price = 1e50;
         MockFeed feed = new MockFeed(price);
-        TCAPTargetOracle oracle = new TCAPTargetOracle(tCAPV2, address(feed));
-        assertEq(price * 10 ** (18 - feed.decimals()) / tCAPV2.DIVISOR(), oracle.latestPrice());
+        TCAPTargetOracle oracle = new TCAPTargetOracle(tCAPV2, address(feed), 1 days);
+        assertEq(price * 10 ** (18 - feed.decimals()) / Constants.DIVISOR, oracle.latestPrice(false));
     }
 }

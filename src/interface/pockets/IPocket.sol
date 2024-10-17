@@ -30,6 +30,9 @@ interface IPocket is IVersioned {
     /// @notice Thrown when a user tries to burn more shares than they own
     error InsufficientFunds();
 
+    /// @notice Thrown when zero shares are minted
+    error ZeroSharesMinted();
+
     /// @notice called by the vault to deposit underlying tokens into the pocket
     /// @param user The address of the user who deposits the underlying tokens
     /// @param amountUnderlying The amount of underlying tokens deposited

@@ -1,5 +1,5 @@
 # Multicall
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/lib/Multicall.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/3ef6bd16edededb3779ffafd1e769c1b67e04d32/src/lib/Multicall.sol)
 
 **Inherits:**
 [IMulticall](/src/interface/IMulticall.sol/interface.IMulticall.md)
@@ -16,7 +16,7 @@ Call multiple functions in the current contract and return the data from all of 
 
 
 ```solidity
-function multicall(bytes[] calldata data) public payable override returns (bytes[] memory results);
+function multicall(bytes[] calldata data) external override returns (bytes[] memory results);
 ```
 **Parameters**
 

@@ -4,11 +4,12 @@ pragma solidity 0.8.26;
 import {IPocket, IVault, IVersioned} from "../interface/pockets/IPocket.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {Constants} from "../lib/Constants.sol";
 
 /// @title Base Pocket
-/// @notice The base pocket stores all funds in this contract
-/// @dev assumes the underlying token is the same as the overlying token.
-contract BasePocket is IPocket, Initializable {
+/// @notice The base pocket implementation
+/// @dev @audit If the underlying token is different from the overlying token, the underlying token MUST be converted into the overlying token on deposit and the overlying token MUST be converted into the underlying token on withdrawal to avoid inflation attack vectors and ensure accurate accounting.
+abstract contract BasePocket is IPocket, Initializable {
     /// @custom:storage-location erc7201:tcapv2.pocket.base
     struct BasePocketStorage {
         uint256 totalShares;
@@ -29,8 +30,6 @@ contract BasePocket is IPocket, Initializable {
         _disableInitializers();
     }
 
-    function initialize() public initializer {}
-
     function _getBasePocketStorage() private pure returns (BasePocketStorage storage $) {
         assembly {
             $.slot := BasePocketStorageLocation
@@ -49,20 +48,20 @@ contract BasePocket is IPocket, Initializable {
         if (totalShares_ > 0) {
             shares = (totalShares_ * amountOverlying) / (OVERLYING_TOKEN.balanceOf(address(this)) - amountOverlying);
         } else {
-            shares = amountOverlying;
+            shares = amountOverlying * Constants.DECIMAL_OFFSET;
         }
+        if (shares == 0) revert ZeroSharesMinted();
         BasePocketStorage storage $ = _getBasePocketStorage();
         $.totalShares += shares;
         $.sharesOf[user] += shares;
         // @audit should not happen, prevent overflow when calculating balance
-        assert($.sharesOf[user] < 1e38);
+        assert($.sharesOf[user] < 1e41);
         emit Deposit(user, amountUnderlying, amountOverlying, shares);
     }
 
     /// @inheritdoc IPocket
     function withdraw(address user, uint256 amountUnderlying, address recipient) external onlyVault returns (uint256 shares) {
         if (amountUnderlying == type(uint256).max) {
-            amountUnderlying = _balanceOf(user);
             shares = sharesOf(user);
         } else {
             shares = amountUnderlying * totalShares() / _totalBalance();
@@ -96,24 +95,13 @@ contract BasePocket is IPocket, Initializable {
         return _totalBalance();
     }
 
-    function _onDeposit(uint256 amountUnderlying) internal virtual returns (uint256 amountOverlying) {
-        amountOverlying = amountUnderlying;
-    }
+    function _onDeposit(uint256 amountUnderlying) internal virtual returns (uint256 amountOverlying);
 
-    function _onWithdraw(uint256 amountOverlying, address recipient) internal virtual returns (uint256 amountUnderlying) {
-        amountUnderlying = amountOverlying;
-        UNDERLYING_TOKEN.transfer(recipient, amountUnderlying);
-    }
+    function _onWithdraw(uint256 amountOverlying, address recipient) internal virtual returns (uint256 amountUnderlying);
 
-    function _balanceOf(address user) internal view virtual returns (uint256) {
-        uint256 totalShares_ = totalShares();
-        if (totalShares_ == 0) return 0;
-        return sharesOf(user) * UNDERLYING_TOKEN.balanceOf(address(this)) / totalShares_;
-    }
+    function _balanceOf(address user) internal view virtual returns (uint256);
 
-    function _totalBalance() internal view virtual returns (uint256) {
-        return UNDERLYING_TOKEN.balanceOf(address(this));
-    }
+    function _totalBalance() internal view virtual returns (uint256);
 
     /// @inheritdoc IVersioned
     function version() external pure virtual override returns (string memory) {

@@ -81,21 +81,29 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param mintAmount The amount of TCAP tokens liquidated
     event Liquidated(address indexed liquidator, address indexed user, uint96 indexed pocketId, uint256 collateralAmount, uint256 mintAmount);
 
+    /// @notice Emitted when a fee is collected from a user
+    /// @param user The address of the user who paid the fee
+    /// @param pocketId The id of the pocket where the collateral is stored
+    /// @param feeRecipient The address of the fee recipient
+    /// @param amount The amount of fee collected
+    event FeeCollected(address indexed user, uint96 indexed pocketId, address indexed feeRecipient, uint256 amount);
+
     enum ErrorCode {
-        ZERO_VALUE,
-        INVALID_POCKET,
-        INVALID_POCKET_COLLATERAL,
-        MAX_FEE,
-        MAX_LIQUIDATION_PENALTY,
-        MAX_LIQUIDATION_THRESHOLD,
-        MIN_LIQUIDATION_THRESHOLD,
-        MAX_POST_LIQUIDATION_HEALTH_FACTOR,
-        MIN_POST_LIQUIDATION_HEALTH_FACTOR,
-        INCOMPATIBLE_MAX_POST_LIQUIDATION_HEALTH_FACTOR,
-        INVALID_BURN_AMOUNT,
-        MUST_LIQUIDATE_ENTIRE_POSITION,
-        HEALTH_FACTOR_BELOW_MINIMUM,
-        HEALTH_FACTOR_ABOVE_MAXIMUM
+        ZERO_VALUE, // 0
+        INVALID_POCKET, // 1
+        INVALID_POCKET_COLLATERAL, // 2
+        MAX_FEE, // 3
+        MAX_LIQUIDATION_PENALTY, // 4
+        MAX_LIQUIDATION_THRESHOLD, // 5
+        MIN_LIQUIDATION_THRESHOLD, // 6
+        MAX_POST_LIQUIDATION_HEALTH_FACTOR, // 7
+        MIN_POST_LIQUIDATION_HEALTH_FACTOR, // 8
+        INCOMPATIBLE_MAX_POST_LIQUIDATION_HEALTH_FACTOR, // 9
+        INVALID_BURN_AMOUNT, // 10
+        MUST_LIQUIDATE_ENTIRE_POSITION, // 11
+        HEALTH_FACTOR_BELOW_MINIMUM, // 12
+        HEALTH_FACTOR_ABOVE_MAXIMUM // 13
+
     }
 
     /// @notice Thrown when a user provides an invalid value
@@ -160,7 +168,7 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @param permit The permit data
     /// @param signature The signature
     /// @return shares The amount of shares minted by the pocket
-    function depositWithPermit(uint96 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom memory permit, bytes calldata signature)
+    function depositWithPermit(uint96 pocketId, uint256 collateralAmount, IPermit2.PermitTransferFrom calldata permit, bytes calldata signature)
         external
         returns (uint256 shares);
 
@@ -192,6 +200,12 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @dev Throws if the loan is not healthy
     /// @dev after the liquidation the health factor must be between the minimum and maximum bounds of the liquidation params
     function liquidate(address user, uint96 pocketId, uint256 burnAmount) external returns (uint256 liquidationReward);
+
+    /// @notice Takes the accrued fees from a user and sends them to the fee recipient
+    /// @param user The address of the user to take the fees from
+    /// @param pocketId The id of the pocket where the collateral is stored
+    /// @dev Only callable by the fee setter
+    function takeFee(address user, uint96 pocketId) external;
 
     /// @notice Returns the health factor of a user
     /// @param user The address of the user

@@ -1,5 +1,5 @@
 # TCAPV2
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/6bc13f590e0d259edfc7844b2201ce75ef760a67/src/TCAPV2.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/TCAPV2.sol)
 
 **Inherits:**
 [ITCAPV2](/src/interface/ITCAPV2.sol/interface.ITCAPV2.md), ERC20, AccessControl
@@ -12,27 +12,6 @@ TCAP v2 is an index token that is pegged to the entire crypto market cap
 
 ```solidity
 bytes32 private constant TCAPV2StorageLocation = 0x49c710835f557391deaa6abce7163dc90464df5e070a25601335cdac43861e00;
-```
-
-
-### VAULT_ROLE
-
-```solidity
-bytes32 public constant VAULT_ROLE = keccak256("VAULT_ROLE");
-```
-
-
-### ORACLE_SETTER_ROLE
-
-```solidity
-bytes32 public constant ORACLE_SETTER_ROLE = keccak256("ORACLE_SETTER_ROLE");
-```
-
-
-### DIVISOR
-
-```solidity
-uint256 public constant DIVISOR = 1e10;
 ```
 
 
@@ -68,7 +47,7 @@ Sets the new oracle for the crypto marketcap
 
 
 ```solidity
-function setOracle(address newOracle) external onlyRole(ORACLE_SETTER_ROLE);
+function setOracle(address newOracle) external onlyRole(Roles.ORACLE_SETTER_ROLE);
 ```
 **Parameters**
 
@@ -85,7 +64,7 @@ Mints new TCAP tokens
 
 
 ```solidity
-function mint(address to, uint256 amount) external onlyRole(VAULT_ROLE);
+function mint(address to, uint256 amount) external onlyRole(Roles.VAULT_ROLE);
 ```
 **Parameters**
 
@@ -103,7 +82,7 @@ Burns TCAP tokens
 
 
 ```solidity
-function burn(address from, uint256 amount) external onlyRole(VAULT_ROLE);
+function burn(address from, uint256 amount) external onlyRole(Roles.VAULT_ROLE);
 ```
 **Parameters**
 

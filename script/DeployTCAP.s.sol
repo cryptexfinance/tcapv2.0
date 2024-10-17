@@ -2,13 +2,14 @@
 pragma solidity 0.8.26;
 
 import "forge-std/Script.sol";
-import "script/deployers/TCAPV2Deployer.s.sol";
 import {TCAPTargetOracle} from "../src/oracle/TCAPTargetOracle.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {AggregatorV3Interface} from "@chainlink/interfaces/feeds/AggregatorV3Interface.sol";
+import {Roles} from "../src/lib/Constants.sol";
+import {TCAPV2, ITCAPV2} from "../src/TCAPV2.sol";
 
-contract Deploy is Script, TCAPV2Deployer {
+contract Deploy is Script {
     using stdJson for string;
 
     function run() public {
@@ -33,12 +34,12 @@ contract TCAPDeployer {
         address implementation = address(new TCAPV2());
         TCAPV2 tcap = TCAPV2(address(new TransparentUpgradeableProxy(implementation, proxyAdminOwner, initData)));
 
-        TCAPV2(tcap).grantRole(TCAPV2(tcap).ORACLE_SETTER_ROLE(), tmpAdmin);
-        TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed));
+        TCAPV2(tcap).grantRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);
+        TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed), 5 days);
         TCAPV2(tcap).setOracle(address(oracle));
-        TCAPV2(tcap).grantRole(TCAPV2(tcap).DEFAULT_ADMIN_ROLE(), admin);
-        TCAPV2(tcap).revokeRole(TCAPV2(tcap).ORACLE_SETTER_ROLE(), tmpAdmin);
-        TCAPV2(tcap).revokeRole(TCAPV2(tcap).DEFAULT_ADMIN_ROLE(), tmpAdmin);
+        TCAPV2(tcap).grantRole(Roles.DEFAULT_ADMIN_ROLE, admin);
+        TCAPV2(tcap).revokeRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);
+        TCAPV2(tcap).revokeRole(Roles.DEFAULT_ADMIN_ROLE, tmpAdmin);
         emit Deployed(address(tcap), implementation);
     }
 }
