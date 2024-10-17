@@ -14,7 +14,7 @@ import {MockCollateral} from "./mock/MockCollateral.sol";
 import {IPermit2, ISignatureTransfer} from "permit2/src/interfaces/IPermit2.sol";
 import {Deploy} from "./util/Deploy.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {BasePocket} from "../src/pockets/BasePocket.sol";
+import {DefaultPocket} from "../src/pockets/DefaultPocket.sol";
 import {Constants, Roles} from "../src/lib/Constants.sol";
 
 abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deployer {
@@ -40,11 +40,11 @@ abstract contract Initialized is Test, TestHelpers, VaultDeployer, TCAPV2Deploye
         tCAPV2.grantRole(Roles.VAULT_ROLE, admin);
         uint256 collateralPrice = 1000;
         feedTCAP = new MockFeed(collateralPrice * Constants.DIVISOR * 1e8);
-        oracleTCAP = new TCAPTargetOracle(tCAPV2, address(feedTCAP));
+        oracleTCAP = new TCAPTargetOracle(tCAPV2, address(feedTCAP), 1 days);
         tCAPV2.setOracle(address(oracleTCAP));
 
         feed = new MockFeed(collateralPrice * 1e8);
-        oracle = new AggregatedChainlinkOracle(address(feed), address(collateral));
+        oracle = new AggregatedChainlinkOracle(address(feed), address(collateral), 1 days);
 
         IVault.LiquidationParams memory liquidationParams = IVault.LiquidationParams({threshold: 1e18, penalty: 0, minHealthFactor: 1, maxHealthFactor: 1e18});
 
@@ -81,7 +81,7 @@ abstract contract PocketSetup is Permitted {
 
     function setUp() public virtual override {
         super.setUp();
-        pocket = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        pocket = address(new DefaultPocket(address(vault), address(collateral)));
         pocketId = vault.addPocket(IPocket(pocket));
     }
 
@@ -198,6 +198,7 @@ contract ManagementTest is Permitted {
     }
 
     function test_ShouldUpdateFeeRecipient(address feeRecipient_) public {
+        vm.assume(feeRecipient_ != address(0));
         vm.expectEmit(true, true, false, true);
         emit IVault.FeeRecipientUpdated(feeRecipient_);
         vault.updateFeeRecipient(feeRecipient_);
@@ -293,19 +294,19 @@ contract PocketTest is Permitted {
     }
 
     function test_RevertIf_PocketDoesNotPointToVault() public {
-        address pocket = address(new BasePocket(makeAddr("vault"), address(collateral), address(collateral)));
+        address pocket = address(new DefaultPocket(makeAddr("vault"), address(collateral)));
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.INVALID_POCKET));
         vault.addPocket(IPocket(pocket));
     }
 
     function test_RevertIf_PocketDoesNotHaveCorrectUnderlyingToken() public {
-        address pocket = address(new BasePocket(address(vault), makeAddr("collateral"), makeAddr("collateral")));
+        address pocket = address(new DefaultPocket(address(vault), makeAddr("collateral")));
         vm.expectRevert(abi.encodeWithSelector(IVault.InvalidValue.selector, IVault.ErrorCode.INVALID_POCKET_COLLATERAL));
         vault.addPocket(IPocket(pocket));
     }
 
     function test_ShouldAddPocket() public {
-        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        address basePocket_ = address(new DefaultPocket(address(vault), address(collateral)));
         uint256 pocketId = 1;
         vm.expectEmit(true, true, false, true);
         emit IVault.PocketAdded(uint96(pocketId), IPocket(basePocket_));
@@ -316,14 +317,14 @@ contract PocketTest is Permitted {
 
     function test_RevertIf_PocketNotEnabledOnDisable(uint96 pocketId) public {
         vm.assume(pocketId != 1);
-        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        address basePocket_ = address(new DefaultPocket(address(vault), address(collateral)));
         vault.addPocket(IPocket(basePocket_));
         vm.expectRevert(abi.encodeWithSelector(IVault.PocketNotEnabled.selector, pocketId));
         vault.disablePocket(pocketId);
     }
 
     function test_ShouldDisablePocket() public {
-        address basePocket_ = address(new BasePocket(address(vault), address(collateral), address(collateral)));
+        address basePocket_ = address(new DefaultPocket(address(vault), address(collateral)));
         vault.addPocket(IPocket(basePocket_));
         vm.expectEmit(true, true, false, true);
         emit IVault.PocketDisabled(uint96(1));

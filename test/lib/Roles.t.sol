@@ -20,6 +20,7 @@ contract RolesTest is Test, TestHelpers, VaultDeployer, TCAPV2Deployer {
         assertEq(Roles.ORACLE_SETTER_ROLE, keccak256("ORACLE_SETTER_ROLE"));
         assertEq(Roles.POCKET_SETTER_ROLE, keccak256("POCKET_SETTER_ROLE"));
         assertEq(Roles.FEE_SETTER_ROLE, keccak256("FEE_SETTER_ROLE"));
+        assertEq(Roles.FEE_COLLECTOR_ROLE, keccak256("FEE_COLLECTOR_ROLE"));
         assertEq(Roles.LIQUIDATION_SETTER_ROLE, keccak256("LIQUIDATION_SETTER_ROLE"));
     }
 }

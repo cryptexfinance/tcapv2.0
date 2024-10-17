@@ -18,7 +18,7 @@ contract AaveV3Pocket is BasePocket, IAaveV3Pocket {
         require(address(OVERLYING_TOKEN) != address(0));
     }
 
-    function initialize() public override initializer {
+    function initialize() public initializer {
         UNDERLYING_TOKEN.approve(address(POOL), type(uint256).max);
     }
 

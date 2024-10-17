@@ -22,6 +22,7 @@
     - [TCAPTargetOracle](src/oracle/TCAPTargetOracle.sol/contract.TCAPTargetOracle.md)
   - [❱ pockets](src/pockets/README.md)
     - [AaveV3Pocket](src/pockets/AaveV3Pocket.sol/contract.AaveV3Pocket.md)
-    - [BasePocket](src/pockets/BasePocket.sol/contract.BasePocket.md)
+    - [BasePocket](src/pockets/BasePocket.sol/abstract.BasePocket.md)
+    - [DefaultPocket](src/pockets/DefaultPocket.sol/contract.DefaultPocket.md)
   - [TCAPV2](src/TCAPV2.sol/contract.TCAPV2.md)
   - [Vault](src/Vault.sol/contract.Vault.md)

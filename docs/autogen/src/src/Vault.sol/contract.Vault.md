@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/55fee5686407b0eff65f8c90731b3d51888021cf/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/e97625d3fa4c1e69cd468f56ea73be8576094941/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -281,7 +281,7 @@ Burns TCAP tokens
 
 
 ```solidity
-function burn(uint96 pocketId, uint256 amount) external;
+function burn(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId, false);
 ```
 **Parameters**
 
@@ -320,9 +320,11 @@ function liquidate(address user, uint96 pocketId, uint256 burnAmount) external r
 
 Takes the accrued fees from a user and sends them to the fee recipient
 
+*Only callable by the fee setter*
+
 
 ```solidity
-function takeFee(address user, uint96 pocketId) external;
+function takeFee(address user, uint96 pocketId) external onlyRole(Roles.FEE_COLLECTOR_ROLE);
 ```
 **Parameters**
 

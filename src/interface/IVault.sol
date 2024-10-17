@@ -204,6 +204,7 @@ interface IVault is IAccessControl, IMulticall, IVersioned {
     /// @notice Takes the accrued fees from a user and sends them to the fee recipient
     /// @param user The address of the user to take the fees from
     /// @param pocketId The id of the pocket where the collateral is stored
+    /// @dev Only callable by the fee setter
     function takeFee(address user, uint96 pocketId) external;
 
     /// @notice Returns the health factor of a user

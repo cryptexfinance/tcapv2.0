@@ -176,7 +176,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function burn(uint96 pocketId, uint256 amount) external {
+    function burn(uint96 pocketId, uint256 amount) external ensureLoanHealthy(msg.sender, pocketId, false) {
         if (amount == 0) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         MintData storage $ = _getVaultStorage().mintData;
         uint256 mintId = _toMintId(msg.sender, pocketId);
@@ -239,7 +239,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     /// @inheritdoc IVault
-    function takeFee(address user, uint96 pocketId) external {
+    function takeFee(address user, uint96 pocketId) external onlyRole(Roles.FEE_COLLECTOR_ROLE) {
         IPocket pocket = _getVaultStorage().pockets[pocketId].pocket;
         if (address(pocket) == address(0)) revert InvalidValue(IVault.ErrorCode.INVALID_POCKET);
         _takeFee(pocket, user, pocketId);
@@ -331,7 +331,7 @@ contract Vault is IVault, AccessControl, Multicall {
         if (interest > collateral) interest = collateral;
         VaultStorage storage $ = _getVaultStorage();
         address feeRecipient_ = $.feeRecipient;
-        if (interest != 0 && feeRecipient_ != address(0)) {
+        if (interest != 0) {
             $.mintData.resetInterestOf(_toMintId(user, pocketId));
             pocket.withdraw(user, interest, feeRecipient_);
             emit FeeCollected(user, pocketId, feeRecipient_, interest);
@@ -346,6 +346,7 @@ contract Vault is IVault, AccessControl, Multicall {
     }
 
     function _updateFeeRecipient(address newFeeRecipient) internal {
+        if (newFeeRecipient == address(0)) revert InvalidValue(IVault.ErrorCode.ZERO_VALUE);
         VaultStorage storage $ = _getVaultStorage();
         $.feeRecipient = newFeeRecipient;
         emit FeeRecipientUpdated(newFeeRecipient);

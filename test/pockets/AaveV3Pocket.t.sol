@@ -10,6 +10,7 @@ import {IWETH9, IERC20} from "../interface/IWETH9.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IPocket} from "../../src/interface/pockets/IPocket.sol";
 import {Constants} from "../../src/lib/Constants.sol";
+import {IPool} from "@aave/interfaces/IPool.sol";
 
 abstract contract Uninitialized is Test, TestHelpers, AaveV3PocketDeployer {
     address POOL_MAINNET = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
@@ -48,6 +49,12 @@ abstract contract Initialized is Uninitialized {
             address admin = address(this);
             deployAaveV3PocketTransparent(admin, address(this), address(underlyingToken), POOL_MAINNET);
         }
+    }
+
+    function deposit(uint256 amount) internal {
+        vm.deal(address(this), amount);
+        underlyingToken.deposit{value: amount}();
+        underlyingToken.transfer(address(aaveV3Pocket), amount);
     }
 }
 
@@ -91,6 +98,35 @@ contract InitializedTest is Initialized {
 }
 
 contract DepositTest is Initialized {
+    function test_ShouldMitigateInflationAttack(uint256 donationAmount, uint256 victimAmount) public {
+        uint256 dust = 1;
+        // maximum victim amount is 0.1 ether, if it is higher, the donation will trigger a supply cap error on aave
+        victimAmount = bound(victimAmount, 1, 0.1 ether);
+        // inflation attack donation amount is less than victim amount * 1e6. Subtract 1 additional wei due to aave rounding errors
+        uint256 donation = bound(donationAmount, victimAmount, victimAmount * 1e6 - 1 - 1);
+        assertEq(underlyingToken.balanceOf(address(aaveV3Pocket)), 0);
+        address attacker = makeAddr("attacker");
+
+        // transfer dust
+        deposit(dust);
+        aaveV3Pocket.registerDeposit(attacker, dust);
+
+        // donate overlying
+        vm.deal(address(this), donation);
+        underlyingToken.deposit{value: donation}();
+        underlyingToken.approve(POOL_MAINNET, donation);
+        IPool(POOL_MAINNET).supply(address(underlyingToken), donation, address(aaveV3Pocket), 0);
+        assertApproxEqAbs(overlyingAToken.balanceOf(address(aaveV3Pocket)), donation + dust, 1);
+
+        address victim = makeAddr("victim");
+        deposit(victimAmount);
+        aaveV3Pocket.registerDeposit(victim, victimAmount);
+        // ensure shares were minted to the victim
+        assertGt(aaveV3Pocket.sharesOf(victim), 0);
+        // ensure the victim's balance is equal to the amount deposited +- 1 wei due to rounding errors on aave
+        assertApproxEqAbs(aaveV3Pocket.balanceOf(victim), victimAmount, 1);
+    }
+
     function test_shouldMintInitialShares(uint256 amount) public onlyForked {
         amount = bound(amount, 1, 1000 ether);
         address user = makeAddr("alice");

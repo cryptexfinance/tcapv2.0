@@ -1,5 +1,5 @@
 # Roles
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/lib/Constants.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/f0168f3fe66c1fba4fd70ffdcdc87287e8f0cb6a/src/lib/Constants.sol)
 
 
 ## State Variables
@@ -35,6 +35,13 @@ bytes32 public constant POCKET_SETTER_ROLE = 0xcbd69888d9fba90fe49a0c7a1d66c35e3
 
 ```solidity
 bytes32 public constant FEE_SETTER_ROLE = 0xe6ad9a47fbda1dc18de1eb5eeb7d935e5e81b4748f3cfc61e233e64f88182060;
+```
+
+
+### FEE_COLLECTOR_ROLE
+
+```solidity
+bytes32 public constant FEE_COLLECTOR_ROLE = 0x2dca0f5ce7e75a4b43fe2b0d6f5d0b7a2bf92ecf89f8f0aa17b8308b67038821;
 ```
 
 
