@@ -23,9 +23,9 @@ contract MintTCAP is Script {
         USDC usdc = USDC(usdcAddress);
         Vault vault = Vault(vaultAddress);
 
-        usdc.mint(admin, 10000000000e6);
-        usdc.approve(vaultAddress, 10000000000e6);
-        vault.deposit(1, 10000000000e6);
+        usdc.mint(admin, 1000000e6);
+        usdc.approve(vaultAddress, 1000000e6);
+        vault.deposit(1, 1000000e6);
         vault.mint(1, 1e18);
         vm.stopBroadcast();
     }
