@@ -34,7 +34,9 @@ abstract contract TCAPV2Deployer is Script {
 
     function deployTCAPV2Implementation() internal returns (address implementation) {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+        address admin = vm.addr(vm.envUint("PRIVATE_KEY"));
         implementation = address(new TCAPV2());
+        TCAPV2(implementation).initialize(admin);
         vm.stopBroadcast();
     }
 }

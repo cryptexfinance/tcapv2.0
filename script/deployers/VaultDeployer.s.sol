@@ -16,6 +16,19 @@ abstract contract VaultDeployer is Script {
     ProxyAdmin internal vaultProxyAdmin;
     address internal vaultImplementation;
 
+    function deployVault() internal {
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+        bytes memory bytecode = vm.readFileBinary("test/bin/permit2.bytecode");
+        address permit2_;
+        assembly {
+            permit2_ := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
+        vm.stopBroadcast();
+        address usdc = vm.getDeployment("USDC");
+        address tcapV2 = vm.getDeployment("TCAPV2");
+        deployVaultImplementation(ITCAPV2(tcapV2), IERC20(usdc), IPermit2(permit2_));
+    }
+
     function deployVaultTransparent(
         address proxyAdminOwner,
         ITCAPV2 tCAPV2_,
@@ -44,6 +57,16 @@ abstract contract VaultDeployer is Script {
     function deployVaultImplementation(ITCAPV2 tCAPV2_, IERC20 collateral_, IPermit2 permit2_) internal returns (address implementation) {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         implementation = address(new Vault(tCAPV2_, collateral_, permit2_));
+        address admin = vm.addr(vm.envUint("PRIVATE_KEY"));
+        address usdcOracle = vm.getDeployment("AggregatedChainlinkOracle");
+        IVault.LiquidationParams memory liquidationParams = IVault.LiquidationParams({threshold: 1e18, penalty: 0, minHealthFactor: 1, maxHealthFactor: 1e18});
+        Vault(implementation).initialize(
+            admin,
+            100,
+            usdcOracle,
+            admin,
+            liquidationParams
+        );
         vm.stopBroadcast();
     }
 }

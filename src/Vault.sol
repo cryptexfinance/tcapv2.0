@@ -73,7 +73,7 @@ contract Vault is IVault, AccessControl, Multicall {
         COLLATERAL = collateral_;
         PERMIT2 = permit2_;
         COLLATERAL_DECIMALS = IERC20Metadata(address(collateral_)).decimals();
-        _disableInitializers();
+//        _disableInitializers();
     }
 
     function initialize(address admin, uint16 initialFee, address oracle_, address feeRecipient_, IVault.LiquidationParams calldata liquidationParams_)

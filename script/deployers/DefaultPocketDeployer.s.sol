@@ -6,8 +6,10 @@ pragma solidity ^0.8.0;
 ////////////////////////////////////////////////////
 
 import "forge-std/Script.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 import "src/pockets/DefaultPocket.sol";
+import "src/Vault.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
@@ -15,6 +17,12 @@ abstract contract DefaultPocketDeployer is Script {
     DefaultPocket internal defaultPocket;
     ProxyAdmin internal defaultPocketProxyAdmin;
     address internal defaultPocketImplementation;
+
+    function deployDefaultPocket() internal {
+        address usdc = vm.getDeployment("USDC");
+        address vault = vm.getDeployment("Vault");
+        deployDefaultPocketImplementation(vault, usdc);
+    }
 
     function deployDefaultPocketTransparent(address proxyAdminOwner, address vault_, address underlyingToken_)
         internal

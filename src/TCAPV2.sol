@@ -26,7 +26,7 @@ contract TCAPV2 is ITCAPV2, ERC20, AccessControl {
     }
 
     constructor() {
-        _disableInitializers();
+//        _disableInitializers();
     }
 
     /// @dev oracle needs to be set after deployment

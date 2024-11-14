@@ -8,6 +8,7 @@ import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openze
 import {AggregatorV3Interface} from "@chainlink/interfaces/feeds/AggregatorV3Interface.sol";
 import {Roles} from "../src/lib/Constants.sol";
 import {TCAPV2, ITCAPV2} from "../src/TCAPV2.sol";
+import {AggregatorInterfaceTCAP} from "script/mocks/AggregateInterfaceTCAP.sol";
 
 contract Deploy is Script {
     using stdJson for string;
@@ -16,7 +17,8 @@ contract Deploy is Script {
         // Final values for deployment tbd
         address proxyAdminOwner = address(1);
         address admin = address(2);
-        AggregatorV3Interface oracleFeed = AggregatorV3Interface(address(3));
+        AggregatorInterfaceTCAP tcapOralce = new AggregatorInterfaceTCAP();
+        AggregatorV3Interface oracleFeed = AggregatorV3Interface(address(tcapOralce));
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         new TCAPDeployer(proxyAdminOwner, admin, oracleFeed);
         vm.stopBroadcast();
@@ -35,7 +37,7 @@ contract TCAPDeployer {
         TCAPV2 tcap = TCAPV2(address(new TransparentUpgradeableProxy(implementation, proxyAdminOwner, initData)));
 
         TCAPV2(tcap).grantRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);
-        TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed), 5 days);
+        TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed), 365 days);
         TCAPV2(tcap).setOracle(address(oracle));
         TCAPV2(tcap).grantRole(Roles.DEFAULT_ADMIN_ROLE, admin);
         TCAPV2(tcap).revokeRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);

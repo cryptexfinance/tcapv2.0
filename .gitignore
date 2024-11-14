@@ -16,3 +16,5 @@ storage_check_cache
 storage_check_report
 
 report/
+
+.idea/
