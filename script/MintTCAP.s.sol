@@ -25,8 +25,18 @@ contract MintTCAP is Script {
 
         usdc.mint(admin, 1000000e6);
         usdc.approve(vaultAddress, 1000000e6);
-        vault.deposit(1, 1000000e6);
-        vault.mint(1, 1e18);
+        bytes[] memory payload = new bytes[](2);
+        payload[0] = abi.encodeWithSelector(
+            vault.deposit.selector,
+            1,
+            1000000e6
+        );
+        payload[1] = abi.encodeWithSelector(
+            vault.mint.selector,
+            1,
+            1e18
+        );
+        vault.multicall(payload);
         vm.stopBroadcast();
     }
 }
