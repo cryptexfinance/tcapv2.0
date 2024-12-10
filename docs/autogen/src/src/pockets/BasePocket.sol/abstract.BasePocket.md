@@ -1,5 +1,5 @@
 # BasePocket
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/9f5c04f0c486dce359a7781c94ffd3096596f1da/src/pockets/BasePocket.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/e5b73f3394edcceba005eb519352db89174b0a0e/src/pockets/BasePocket.sol)
 
 **Inherits:**
 [IPocket](/src/interface/pockets/IPocket.sol/interface.IPocket.md), Initializable
@@ -204,6 +204,9 @@ function version() external pure virtual override returns (string memory);
 
 ## Structs
 ### BasePocketStorage
+**Note:**
+storage-location: erc7201:tcapv2.pocket.base
+
 
 ```solidity
 struct BasePocketStorage {

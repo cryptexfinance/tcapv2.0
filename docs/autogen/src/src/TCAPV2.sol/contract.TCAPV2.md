@@ -1,5 +1,5 @@
 # TCAPV2
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/d197f8ef7c2bfcdd8eeb0e4fc546c998a12a18f4/src/TCAPV2.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/e5b73f3394edcceba005eb519352db89174b0a0e/src/TCAPV2.sol)
 
 **Inherits:**
 [ITCAPV2](/src/interface/ITCAPV2.sol/interface.ITCAPV2.md), ERC20, AccessControl
@@ -164,6 +164,9 @@ function version() external pure returns (string memory);
 
 ## Structs
 ### TCAPV2Storage
+**Note:**
+storage-location: erc7201:tcapv2.storage.main
+
 
 ```solidity
 struct TCAPV2Storage {
