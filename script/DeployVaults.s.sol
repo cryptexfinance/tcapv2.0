@@ -13,13 +13,14 @@ contract Deploy is VaultDeployer, VaultDeployParams {
         [0x4200000000000000000000000000000000000006, 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf, 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913];
 
     function run() public {
-        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         for (uint256 i = 0; i < vaultsToDeployTokens.length; i++) {
             if (tcap[block.chainid] == address(0)) revert("TCAP address not set");
             address token = vaultsToDeployTokens[i];
             Params memory params = _params[block.chainid][token];
             if (!params.exists) revert("Config for token not found");
+            vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
             AggregatedChainlinkOracle oracle = new AggregatedChainlinkOracle(params.oracleParams.priceFeed, token, params.oracleParams.heartbeat * 10);
+            vm.stopBroadcast();
             deployVaultTransparent(
                 params.admin,
                 ITCAPV2(tcap[block.chainid]),
@@ -32,6 +33,6 @@ contract Deploy is VaultDeployer, VaultDeployParams {
                 params.liquidationParams
             );
         }
-        vm.stopBroadcast();
+
     }
 }
