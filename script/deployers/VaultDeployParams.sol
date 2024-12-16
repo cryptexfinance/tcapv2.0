@@ -23,7 +23,7 @@ contract VaultDeployParams {
 
     constructor() {
         // Base
-        tcap[8453] = 0xA97e49a1a5d9C9b9D991C3900f4238720e17B4D1;
+        tcap[8453] = 0x4e99472385a2522aa292b008Da294a78F420A367;
         // WETH
         _params[8453][0x4200000000000000000000000000000000000006] = Params({
             exists: true,
