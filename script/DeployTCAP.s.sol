@@ -14,7 +14,7 @@ contract Deploy is Script {
 
     function run() public {
         address proxyAdminOwner = 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A;
-        address admin = 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A;
+        address admin = 0x6BF125D25cC4d00FAB06C30095f8DCBe2617bBBD;
         AggregatorV3Interface oracleFeed = AggregatorV3Interface(0x962C0Df8Ca7f7C682B3872ccA31Ea9c8999ab23c);
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         new TCAPDeployer(proxyAdminOwner, admin, oracleFeed);

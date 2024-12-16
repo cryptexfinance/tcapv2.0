@@ -17,7 +17,7 @@ contract Deploy is VaultDeployer, VaultDeployParams {
         for (uint256 i = 0; i < vaultsToDeployTokens.length; i++) {
             if (tcap[block.chainid] == address(0)) revert("TCAP address not set");
             address token = vaultsToDeployTokens[i];
-            Params memory params = params[block.chainid][token];
+            Params memory params = _params[block.chainid][token];
             if (!params.exists) revert("Config for token not found");
             AggregatedChainlinkOracle oracle = new AggregatedChainlinkOracle(params.oracleParams.priceFeed, token, params.oracleParams.heartbeat * 10);
             deployVaultTransparent(
