@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import "forge-std/Script.sol";
+import "forge-std/console.sol";
 import {TCAPTargetOracle} from "../src/oracle/TCAPTargetOracle.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -32,10 +33,13 @@ contract TCAPDeployer {
 
         address implementation = address(new TCAPV2());
         TCAPV2 tcap = TCAPV2(address(new TransparentUpgradeableProxy(implementation, proxyAdminOwner, initData)));
+        console.log("deployed TCAP at: ", address(tcap));
 
         TCAPV2(tcap).grantRole(Roles.DEFAULT_ADMIN_ROLE, admin);
+        TCAPV2(tcap).grantRole(Roles.DEFAULT_ADMIN_ROLE, proxyAdminOwner);
         TCAPV2(tcap).grantRole(Roles.ORACLE_SETTER_ROLE, admin);
         TCAPV2(tcap).grantRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);
+
         TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed), 5 days);
         TCAPV2(tcap).setOracle(address(oracle));
         TCAPV2(tcap).revokeRole(Roles.ORACLE_SETTER_ROLE, tmpAdmin);

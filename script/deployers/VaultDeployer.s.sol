@@ -37,6 +37,7 @@ abstract contract VaultDeployer is Script {
         vm.stopBroadcast();
 
         vaultProxyAdmin = ProxyAdmin(address(uint160(uint256(vm.load(address(vault), hex"b53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103")))));
+        console.log("Collateral address, vault address:", address(collateral_), address(vaultProxyAdmin));
 
         return (vaultImplementation, address(vaultProxyAdmin), address(vault));
     }

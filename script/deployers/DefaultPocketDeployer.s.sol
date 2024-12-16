@@ -31,6 +31,7 @@ abstract contract DefaultPocketDeployer is Script {
 
         defaultPocketProxyAdmin =
             ProxyAdmin(address(uint160(uint256(vm.load(address(defaultPocket), hex"b53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103")))));
+        console.log("Collateral address, default pocket address:", address(underlyingToken_), address(defaultPocketProxyAdmin));
 
         return (defaultPocketImplementation, address(defaultPocketProxyAdmin), address(defaultPocket));
     }
