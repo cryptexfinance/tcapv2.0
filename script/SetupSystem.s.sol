@@ -7,28 +7,27 @@ import {Roles} from "src/lib/Constants.sol";
 import {TCAPV2, ITCAPV2} from "src/TCAPV2.sol";
 
 contract SetupSystem is Script {
+    address admin = 0x6BF125D25cC4d00FAB06C30095f8DCBe2617bBBD;
+    address proxyAdmin = 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A;
+    address wETHVaultAddress = address(0); // TODO: set  address
+    address cbBTCVaultAddress = address(0); // TODO: set address
+    address usdcVaultAddress = address(0); // TODO: set address
+
+    TCAPV2 tcapV2 = TCAPV2(address(0)); // TODO: set TCAP address
+
+    IVault wETHVault = IVault(wETHVaultAddress);
+    IVault cbBTCVault = IVault(cbBTCVaultAddress);
+    IVault usdcVault = IVault(usdcVaultAddress);
+
+    IPocket wETHDefaultPocket = IPocket(address(0)); // TODO: set address
+    IPocket cbBTCDefaultPocket = IPocket(address(0)); // TODO: set address
+    IPocket usdcDefaultPocket = IPocket(address(0)); // TODO: set address
+
+    IPocket wETHAavePocket = IPocket(address(0)); // TODO: set address
+    IPocket cbBTCAavePocket = IPocket(address(0)); // TODO: set address
+    IPocket usdcAavePocket = IPocket(address(0)); // TODO: set address
 
     function run() external {
-        address admin = 0x6BF125D25cC4d00FAB06C30095f8DCBe2617bBBD;
-        address proxyAdmin = 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A;
-        address wETHVaultAddress = address(0); // TODO: set  address
-        address cbBTCVaultAddress = address(0); // TODO: set address
-        address usdcVaultAddress = address(0); // TODO: set address
-
-        TCAPV2 tcapV2 = TCAPV2(address(0)); // TODO: set TCAP address
-
-        IVault wETHVault = IVault(wETHVaultAddress);
-        IVault cbBTCVault = IVault(cbBTCVaultAddress);
-        IVault usdcVault = IVault(usdcVaultAddress);
-
-        IPocket wETHDefaultPocket = IPocket(address(0)); // TODO: set address
-        IPocket cbBTCDefaultPocket = IPocket(address(0)); // TODO: set address
-        IPocket usdcDefaultPocket = IPocket(address(0)); // TODO: set address
-
-        IPocket wETHAavePocket = IPocket(address(0)); // TODO: set address
-        IPocket cbBTCAavePocket = IPocket(address(0)); // TODO: set address
-        IPocket usdcAavePocket = IPocket(address(0)); // TODO: set address
-
         vm.startBroadcast(vm.envUint("PROXY_ADMIN_PRIVATE_KEY"));
 
         tcapV2.grantRole(Roles.VAULT_ROLE, wETHVaultAddress);
