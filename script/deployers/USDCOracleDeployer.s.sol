@@ -11,7 +11,7 @@ abstract contract USDCOracleDeployer is Script {
     function deployUSDCOracle() internal {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         AggregatorInterfaceUSDC usdcOralceFeed = new AggregatorInterfaceUSDC();
-        address usdcAddress = vm.getDeployment("USDC");
+        address usdcAddress = 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8;
         new AggregatedChainlinkOracle(address(usdcOralceFeed), usdcAddress, 1 days);
         vm.stopBroadcast();
     }

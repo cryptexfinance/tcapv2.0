@@ -16,6 +16,14 @@ abstract contract AaveV3PocketDeployer is Script {
     ProxyAdmin internal aaveV3PocketProxyAdmin;
     address internal aaveV3PocketImplementation;
 
+    function deployAavePocket() internal returns (address){
+        address vaultAddress = vm.getDeployment("Vault");
+        address underlyingToken = 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8;
+        address aavePool = 0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951;
+        return deployAaveV3PocketImplementation(vaultAddress, underlyingToken, aavePool);
+    }
+
+
     function deployAaveV3PocketTransparent(address proxyAdminOwner, address vault_, address underlyingToken_, address aavePool)
         internal
         returns (address implementation, address proxyAdmin, address proxy)
@@ -38,6 +46,7 @@ abstract contract AaveV3PocketDeployer is Script {
     function deployAaveV3PocketImplementation(address vault_, address underlyingToken_, address aavePool) internal returns (address implementation) {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         implementation = address(new AaveV3Pocket(vault_, underlyingToken_, aavePool));
+        AaveV3Pocket(implementation).initialize();
         vm.stopBroadcast();
     }
 }

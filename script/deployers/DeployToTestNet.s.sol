@@ -11,6 +11,9 @@ import {TCAPOracleDeployer} from "script/deployers/TCAPOracleDeployer.s.sol";
 import {VaultDeployer} from "script/deployers/VaultDeployer.s.sol";
 import {DefaultPocketDeployer} from "script/deployers/DefaultPocketDeployer.s.sol";
 import {SetupSystem} from "script/deployers/SetupSystem.s.sol";
+import {AaveV3PocketDeployer} from "script/deployers/AaveV3PocketDeployer.s.sol";
+import {IPocket} from "src/interface/pockets/IPocket.sol";
+import {Vault} from "src/Vault.sol";
 
 contract DeployToTestNet is
     USDCDeployer,
@@ -19,15 +22,17 @@ contract DeployToTestNet is
     TCAPOracleDeployer,
     VaultDeployer,
     DefaultPocketDeployer,
+    AaveV3PocketDeployer,
     SetupSystem {
 
     function run() external {
-        deployUSDC();
-        deployTCAPV2Implementation();
-        deployUSDCOracle();
-        deployTCAPOracle();
-        deployVault();
-        deployDefaultPocket();
+//        deployUSDC();
+//        deployTCAPV2Implementation();
+//        deployUSDCOracle();
+//        deployTCAPOracle();
+//        deployVault();
+//        deployDefaultPocket();
+//        deployAavePocket();
         setupSystem();
     }
 }

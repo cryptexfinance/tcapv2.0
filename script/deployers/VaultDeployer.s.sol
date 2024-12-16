@@ -16,7 +16,7 @@ abstract contract VaultDeployer is Script {
     ProxyAdmin internal vaultProxyAdmin;
     address internal vaultImplementation;
 
-    function deployVault() internal {
+    function deployVault() internal returns (address) {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         bytes memory bytecode = vm.readFileBinary("test/bin/permit2.bytecode");
         address permit2_;
@@ -24,9 +24,9 @@ abstract contract VaultDeployer is Script {
             permit2_ := create(0, add(bytecode, 0x20), mload(bytecode))
         }
         vm.stopBroadcast();
-        address usdc = vm.getDeployment("USDC");
+        address usdc = 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8;
         address tcapV2 = vm.getDeployment("TCAPV2");
-        deployVaultImplementation(ITCAPV2(tcapV2), IERC20(usdc), IPermit2(permit2_));
+        return deployVaultImplementation(ITCAPV2(tcapV2), IERC20(usdc), IPermit2(permit2_));
     }
 
     function deployVaultTransparent(

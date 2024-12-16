@@ -23,11 +23,12 @@ abstract contract SetupSystem is Script {
     function setupSystem() internal {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         address admin = vm.addr(vm.envUint("PRIVATE_KEY"));
-        address usdcAddress = vm.getDeployment("USDC");
+        address usdcAddress = 0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8;
         address vaultAddress = vm.getDeployment("Vault");
         address tcapV2Address = vm.getDeployment("TCAPV2");
         address defaultPocketAddress = vm.getDeployment("DefaultPocket");
         address tcapOracle = vm.getDeployment("TCAPTargetOracle");
+        address aavePocket = vm.getDeployment("AaveV3Pocket");
         TCAPV2 tcapV2 = TCAPV2(tcapV2Address);
         Vault vault = Vault(vaultAddress);
         tcapV2.grantRole(Roles.ORACLE_SETTER_ROLE, admin);
@@ -38,12 +39,14 @@ abstract contract SetupSystem is Script {
         vault.grantRole(Roles.ORACLE_SETTER_ROLE, admin);
         vault.grantRole(Roles.LIQUIDATION_SETTER_ROLE, admin);
         vault.addPocket(IPocket(defaultPocketAddress));
+        vault.addPocket(IPocket(aavePocket));
         console.log("============deployed addresses===========");
         console.log("admin", admin);
         console.log("TCAP", tcapV2Address);
         console.log("USDC", usdcAddress);
         console.log("usdc vault", vaultAddress);
         console.log("default pocket", defaultPocketAddress);
+        console.log("aave Pocket", aavePocket);
         console.log("TCAP Oracle", tcapOracle);
         console.log("==================end====================");
         vm.stopBroadcast();

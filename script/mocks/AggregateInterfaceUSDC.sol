@@ -40,7 +40,7 @@ contract AggregatorInterfaceUSDC {
   }
 
   function decimals() external pure returns(uint256) {
-    return 8;
+    return 6;
   }
 
   event AnswerUpdated(
