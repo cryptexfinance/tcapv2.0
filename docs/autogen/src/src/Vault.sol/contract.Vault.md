@@ -1,5 +1,5 @@
 # Vault
-[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/e97625d3fa4c1e69cd468f56ea73be8576094941/src/Vault.sol)
+[Git Source](https://github.com/cryptexfinance/tcapv2.0/blob/e5b73f3394edcceba005eb519352db89174b0a0e/src/Vault.sol)
 
 **Inherits:**
 [IVault](/src/interface/IVault.sol/interface.IVault.md), AccessControl, [Multicall](/src/lib/Multicall.sol/abstract.Multicall.md)
@@ -722,6 +722,9 @@ struct MintData {
 ```
 
 ### VaultStorage
+**Note:**
+storage-location: erc7201:tcapv2.storage.vault
+
 
 ```solidity
 struct VaultStorage {

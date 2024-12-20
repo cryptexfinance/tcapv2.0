@@ -98,7 +98,7 @@ contract InitializedTest is Initialized {
 }
 
 contract DepositTest is Initialized {
-    function test_ShouldMitigateInflationAttack(uint256 donationAmount, uint256 victimAmount) public {
+    function test_ShouldMitigateInflationAttack(uint256 donationAmount, uint256 victimAmount) public onlyForked {
         uint256 dust = 1;
         // maximum victim amount is 0.1 ether, if it is higher, the donation will trigger a supply cap error on aave
         victimAmount = bound(victimAmount, 1, 0.1 ether);
