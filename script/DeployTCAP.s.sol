@@ -16,24 +16,23 @@ contract Deploy is Script {
 
     function run() public {
         address proxyAdminOwner = 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A;
-        address admin = 0x6BF125D25cC4d00FAB06C30095f8DCBe2617bBBD;
-        AggregatorV3Interface oracleFeed = AggregatorV3Interface(0x962C0Df8Ca7f7C682B3872ccA31Ea9c8999ab23c);
+        address admin = 0x30Abf2e1ac3A52c8c3F99078d1D52667d656C84B;
+        AggregatorV3Interface oracleFeed = AggregatorV3Interface(0x5b9C9836eceC3Eb097FBE6b6436b477942F4e525);
 
-        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+        uint256 pk = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(pk);
+        console.log('pk address', vm.addr(pk));
 
-        bytes memory initData = abi.encodeCall(TCAPV2.initialize, (proxyAdminOwner));
+        bytes memory initData = abi.encodeCall(TCAPV2.initialize, (admin));
 
         address implementation = address(new TCAPV2());
         TCAPV2 tcap = TCAPV2(address(new TransparentUpgradeableProxy(implementation, proxyAdminOwner, initData)));
         console.log("deployed TCAP at: ", address(tcap));
 
-        TCAPV2(tcap).grantRole(Roles.DEFAULT_ADMIN_ROLE, admin);
         TCAPV2(tcap).grantRole(Roles.ORACLE_SETTER_ROLE, admin);
-        TCAPV2(tcap).grantRole(Roles.ORACLE_SETTER_ROLE, proxyAdminOwner);
 
         TCAPTargetOracle oracle = new TCAPTargetOracle(ITCAPV2(tcap), address(oracleFeed), 5 days);
         TCAPV2(tcap).setOracle(address(oracle));
-        TCAPV2(tcap).revokeRole(Roles.ORACLE_SETTER_ROLE, proxyAdminOwner);
         emit Deployed(address(tcap), implementation);
 
         vm.stopBroadcast();
