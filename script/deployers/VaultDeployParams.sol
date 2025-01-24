@@ -23,7 +23,7 @@ contract VaultDeployParams {
 
     constructor() {
         // Base
-        tcap[8453] = address(0); // TODO set after deployment
+        tcap[8453] = 0x4e99472385a2522aa292b008Da294a78F420A367;
         // WETH
         _params[8453][0x4200000000000000000000000000000000000006] = Params({
             exists: true,
@@ -46,6 +46,15 @@ contract VaultDeployParams {
         _params[8453][0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913] = Params({
             exists: true,
             oracleParams: OracleParams({priceFeed: 0x7e860098F58bBFC8648a4311b374B1D669a2bc6B, heartbeat: 86_400}),
+            admin: 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A,
+            initialFee: 0,
+            feeRecipient: 0x6BF125D25cC4d00FAB06C30095f8DCBe2617bBBD,
+            liquidationParams: IVault.LiquidationParams({threshold: 1.3e18, penalty: 0.1e18, minHealthFactor: 0.05e18, maxHealthFactor: 0.1e18})
+        });
+        // LBTC
+        _params[8453][0xecAc9C5F704e954931349Da37F60E39f515c11c1] = Params({
+            exists: true,
+            oracleParams: OracleParams({priceFeed: 0x9e07546c9Fe8868855CD04B26051a26D1599E270, heartbeat: 1200}),
             admin: 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A,
             initialFee: 0,
             feeRecipient: 0x6BF125D25cC4d00FAB06C30095f8DCBe2617bBBD,

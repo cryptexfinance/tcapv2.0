@@ -12,12 +12,9 @@ import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "@openze
 contract Deploy is VaultDeployer, VaultDeployParams {
     using stdJson for string;
 
-//    Vault internal vault;
-//    ProxyAdmin internal vaultProxyAdmin;
-//    address internal vaultImplementation;
 
     address[] vaultsToDeployTokens =
-        [0x4200000000000000000000000000000000000006, 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf, 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913];
+        [0xecAc9C5F704e954931349Da37F60E39f515c11c1];
 
     function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));

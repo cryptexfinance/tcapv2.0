@@ -31,6 +31,7 @@ abstract contract AaveV3PocketDeployer is Script {
 
         aaveV3PocketProxyAdmin =
             ProxyAdmin(address(uint160(uint256(vm.load(address(aaveV3Pocket), hex"b53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103")))));
+        console.log("Collateral address, aave pocket address:", address(underlyingToken_), address(aaveV3PocketProxyAdmin));
 
         return (aaveV3PocketImplementation, address(aaveV3PocketProxyAdmin), address(aaveV3Pocket));
     }
