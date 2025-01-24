@@ -37,5 +37,13 @@ contract PocketDeployParams {
             deployAave: true,
             aavePool: 0xA238Dd80C259a72e81d7e4664a9801593F98d1c5
         });
+        // LBTC
+        vault[8453][0xecAc9C5F704e954931349Da37F60E39f515c11c1] = 0xD29D6E24946a8e9B55797F5A4EF34EEB0E73a15A;
+        pockets[8453][0xecAc9C5F704e954931349Da37F60E39f515c11c1] = PocketData({
+            admin: 0x570f581D23a2AB09FD1990279D9DB6f5DcE18F4A,
+            deployDefault: true,
+            deployAave: false,
+            aavePool: address(0)
+        });
     }
 }
